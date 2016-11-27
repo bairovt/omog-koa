@@ -1,0 +1,16 @@
+{
+  "name": "rod.so",
+  "version": "1.0.0",
+  "description": "Social lineage net",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Bairov Tumen Gonchikbalovich",
+  "license": "ISC",
+  "dependencies": {
+    "arangojs": "^5.4.1",
+    "koa": "^2.0.0",
+    "koa-swig": "^2.2.0"
+  }
+}
