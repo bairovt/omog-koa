@@ -10,7 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "arangojs": "^5.4.1",
-    "koa": "^2.0.0",
+    "koa": "^1.2.4",
     "koa-swig": "^2.2.0"
   }
 }

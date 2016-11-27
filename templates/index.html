@@ -1,0 +1,12 @@
+{% extends "layout.html" %}
+
+{{ block content }}
+<h2>Hello!</h2>
+<ul>
+	{{ persons }}
+	{% for p in persons %}
+	<li>{{ p.fullname }}</li>
+	{% endfor %}
+</ul>
+{{ endblock }}
+
