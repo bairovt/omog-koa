@@ -11,6 +11,7 @@
   "dependencies": {
     "arangojs": "^5.4.1",
     "koa": "^1.2.4",
+    "koa-router": "^5.4.0",
     "koa-swig": "^2.2.0"
   }
 }
