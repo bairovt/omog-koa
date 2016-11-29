@@ -1,14 +1,28 @@
 {% extends "layout.html" %}
 
-{% block title %} {{ person.fullname }} {% endblock %}
+{% block title %} {{person.fullname}} {% endblock %}
 
 {% block content %}
-<h2>{{ person.fullname }}</h2>
-<p>Год рождения: {{ person.born }}</p>
+<h2>{{person.fullname}}</h2>
+<p>Год рождения: {{person.born}}</p>
 <br>
 <h3>Предки</h3>
 
-{{}}
+<table>
+	<th>
+		<td>колено</td><td>предки</td>
+	</th>
+	{% for i in 1..gensCount %}
+	<tr>
+		<td>{{i}}</td>
+		<td>
+			{% for ancestor in gens[i] %}
+				{{ancestor}},
+			{% endfor %}
+		</td>
+	</tr>
+	{% endfor %}
+</table>
+
 
 {% endblock %}
-

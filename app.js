@@ -38,17 +38,23 @@ router.get('/:_key', function *(next) {
 	let cursor = yield db.query(
 		aql`FOR v, e, p
 		    IN 0..100 INBOUND
-		    "Persons/${}"
+		    "Persons/${this.params._key}"
 		    GRAPH "parentGraph"
 		    OPTIONS {bfs: true}
 		    RETURN {person: v, edges: p.edges}`
     );
     let ancestors = yield cursor.all(); // ancestors[0] is person
     let person = ancestors[0];
-    let reduced = ancestors.reduce((res, curent) => {
-    	if curent.
-    }, {})
-	yield this.render("person", { person, ancestors });
+    // формируем объект массивов поколений: ключ - глубина колена, значение - массив предков этого колена
+    let gens = ancestors.reduce(function(gens, current, index) {
+    	if (index == 0) return res; // игнорируем 0-й элемент (person)
+    	let i = current.edges.length; // глубина колена текущего предка
+    	if (typeof res[i] === 'undefined') res[i] = []; // инициируем массив предков i-го колена, если его нет
+    	res[i].push(cursor.fullname); // добавляем предка в массив предков i-го колена
+    	return res;
+    }, {}); // на входе пустой объект
+    let gensCount = Object.keys(gens).length;
+	yield this.render("person", { person, gens, gensCount });
 });
 
 app.use(router.routes());
