@@ -30,10 +30,25 @@ router.get('/', function *(next) {
 	yield this.render("index", { persons });	
 });
 
+// Personal page
 router.get('/:_key', function *(next) {
-	let personsColl = db.collection('Persons');
-	let person = yield personsColl.document(this.params._key);	
-	yield this.render("person", { person });	
+	// let personsColl = db.collection('Persons');
+	// let person = yield personsColl.document(this.params._key);
+	// let 
+	let cursor = yield db.query(
+		aql`FOR v, e, p
+		    IN 0..100 INBOUND
+		    "Persons/${}"
+		    GRAPH "parentGraph"
+		    OPTIONS {bfs: true}
+		    RETURN {person: v, edges: p.edges}`
+    );
+    let ancestors = yield cursor.all(); // ancestors[0] is person
+    let person = ancestors[0];
+    let reduced = ancestors.reduce((res, curent) => {
+    	if curent.
+    }, {})
+	yield this.render("person", { person, ancestors });
 });
 
 app.use(router.routes());
