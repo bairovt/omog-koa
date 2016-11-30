@@ -36,7 +36,9 @@ router.get('/:_key', function *(next) {
 	// let person = yield personsColl.document(this.params._key);	
 	let _id = `Persons/${this.params._key}`;	
 
-	let cursor = yield db.query(
+	// находим предков персоны
+	let ancestorsCursor = yield db.query(
+		// начинаем с 0 чтобы не делать еще 1 запрос для получения person
 		aql`FOR v, e, p
 		    IN 0..100 INBOUND
 		    ${_id}
@@ -44,10 +46,25 @@ router.get('/:_key', function *(next) {
 		    OPTIONS {bfs: true}
 		    RETURN {person: v, edges: p.edges}`
     );
-    //console.log(cursor);
-    let ancestors = yield cursor.all(); // ancestors[0] is person
     
-    let person = ancestors[0].person;
+    let ancestors = yield ancestorsCursor.all(); // ancestors[0] is person
+    
+    let person = ancestors[0].person; //извлекаем персону
+    ancestors.splice(0, 1); // удалить персону из массива предков
+
+    // находим потомков персоны
+    let descendantsCursor = yield db.query(
+		// начинаем с 0 чтобы не делать еще 1 запрос для получения person
+		aql`FOR v, e, p
+		    IN 1..100 OUTBOUND
+		    ${_id}
+		    GRAPH 'parentGraph'
+		    OPTIONS {bfs: true}
+		    RETURN {person: v, edges: p.edges}`
+    );
+
+    let descendants = yield descendantsCursor.all()
+
     // // формируем объект массивов поколений: ключ - глубина колена, значение - массив предков этого колена
     // let gens = ancestors.reduce(function(gens, current, index) {
     // 	if (index == 0) return gens; // игнорируем 0-й элемент (person)
@@ -58,7 +75,7 @@ router.get('/:_key', function *(next) {
     // }, {}); // на входе пустой объект
     // let gensCount = Object.keys(gens).length;
 
-	yield this.render("person", { person, ancestors }); //gens, gensCount
+	yield this.render("person", { person, ancestors, descendants }); //gens, gensCount
 });
 
 app.use(router.routes());
