@@ -78,6 +78,16 @@ router.get('/:_key', function *(next) {
 	yield this.render("person", { person, ancestors, descendants }); //gens, gensCount
 });
 
+router.post('/add_parent/:person_key', function *(next){
+	let personsColl = db.collection('Persons');
+	let personDoc = {_f};
+	let parentE = {
+		_from:
+		_to:
+		addedBy:
+	};
+});
+
 app.use(router.routes());
 
 app.listen(5000);
