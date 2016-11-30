@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<h2>Все люди</h2>
+
 <ul>	
 	{% for p in persons %}
 	<li><a href="/{{ p._key }}">{{ p.fullname }}</a></li>
