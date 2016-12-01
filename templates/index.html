@@ -4,7 +4,7 @@
 
 <ul>	
 	{% for p in persons %}
-	<li><a href="/{{ p._key }}">{{ p.fullname }}</a></li>
+	<li><a href="/person/{{ p._key }}">{{ p.fullname }}</a></li>
 	{% endfor %}
 </ul>
 {% endblock %}

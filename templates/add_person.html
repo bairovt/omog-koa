@@ -6,8 +6,12 @@
 <h2>Добавить родителя для: {{person.fullname}}</h2>
 
 
-<form>
-	
+<form action="/add_person" method="post">
+	<input type="text" name="surname" placeholder="Фамилия">
+    <input type="text" name="name" placeholder="Имя">    
+    <input type="text" name="midname" placeholder="Отчество">
+    <input type="hidden" name="person_id" value="{{person._id}}">
+    <button type="submit">Добавить</button>
 </form>
 
 
