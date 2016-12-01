@@ -57,6 +57,18 @@ function* getPerson(next) {
 
 function* addPerson(next){
     if (this.method == "POST") {
+        let relation = {
+            father: 'отца',
+            mother: 'мать',
+            son: 'сына',
+            daughter: 'дочь' 
+        };
+        let Persons = db.collection('Persons');
+        // нужен транслитератор
+        let doc ={
+
+        }
+
 
     }
     yield this.render('add_person');
@@ -64,7 +76,7 @@ function* addPerson(next){
 
 router
     // .use(authorize(['admin']))
-    .get('/:_key', getPerson);    
+    .get('/add_person/:rel/:_key', getPerson);    
     .all('/add_person', addPerson);
     
 
