@@ -1,5 +1,6 @@
 'use strict';
 const Koa = require('koa');
+const Koa = require('koa-session');
 const render = require('koa-swig');
 const path = require('path');
 const Router = require('koa-router');
@@ -7,6 +8,7 @@ const aql = require('arangojs').aql;
 const db = require('modules/arangodb')
 
 const app = new Koa();
+app.keys = ['SlvmsKJHksdfSDFaflk'] // config.get('sekret')
 app.context.render = render({
 	root: __dirname + '/templates',//path.join(__dirname, 'templates'),
 	autoescape: true,
@@ -14,6 +16,8 @@ app.context.render = render({
 	ext: 'html'
 	// locals: locals
 });
+
+
 
 const router = new Router();
 

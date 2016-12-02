@@ -56,28 +56,34 @@ function* getPerson(next) {
 };
 
 function* addPerson(next){
-    if (this.method == "POST") {
-        let relation = {
+    if (this.method == "POST") {        
+        let {} = this.request.body[relation];
+        let Persons = db.collection('Persons');
+        // нужен транслитератор
+        let newPersonDoc = {
+
+        };
+        let parentE = {
+            _from:,
+            _to::
+            addedBy: this.session._key
+        }
+        this.redirect(`/person/${this.request.body[key]}`);
+    }
+    let relationDict = {
             father: 'отца',
             mother: 'мать',
             son: 'сына',
             daughter: 'дочь' 
         };
-        let Persons = db.collection('Persons');
-        // нужен транслитератор
-        let doc ={
-
-        }
-
-
-    }
-    yield this.render('add_person');
+    yield this.render('add_person', relation: relationDict[rel]);
 };
 
 router
     // .use(authorize(['admin']))
-    .get('/add_person/:rel/:_key', getPerson);    
-    .all('/add_person', addPerson);
+    .get('/person/:_key', getPerson);    // страница человека
+    .get('/add_person/:rel/:_key', addPerson);   // страница добавления человека 
+    .post('/add_person', addPerson);    // обработка добавления человека
     
 
 module.exports = router.routes();
