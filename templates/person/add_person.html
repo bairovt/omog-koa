@@ -1,0 +1,18 @@
+{% extends "../layout.html"%}
+
+{% block title %} Добавить родителья {% endblock %}
+
+{% block content %}
+<h2>Добавить <strong>{{relation}}</strong> для: {{person.fullname}}</h2>
+
+
+<form action="/person/{{person._key}}/add/{{rel}}" method="post">
+	<input type="text" name="surname" placeholder="Фамилия">
+    <input type="text" name="name" placeholder="Имя">    
+    <input type="text" name="midname" placeholder="Отчество">    
+    <input type="text" name="maidenName" placeholder="Девичья фамилия">    
+    <button type="submit">Добавить {{relation}}</button>
+</form>
+
+
+{% endblock %}

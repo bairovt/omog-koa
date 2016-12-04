@@ -1,0 +1,11 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<ul>	
+	{% for rod in rods %}
+	<li><a href="/rod/{{ rod._key }}">{{ rod.name }}</a></li>
+	{% endfor %}
+</ul>
+{% endblock %}
+
