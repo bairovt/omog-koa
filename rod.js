@@ -40,7 +40,8 @@ const router = new Router();
 
 // router.use('/', require('routes/main'));
 function* main(next) {  
-    let cursor = yield db.query(aql`FOR r IN Rod RETURN {name: r.name}`);
+    let cursor = yield db.query(aql`FOR r IN Rod                                        
+                                        RETURN r`);
     let rods = yield cursor.all();
     yield this.render("main", { rods });    
 };
@@ -78,9 +79,10 @@ router
 
 //main router
 router    
-    .get('/', main)    // страница человека    
-    .get('/all', all)    // страница человека
+    .get('/', main)       
+    .get('/all', all)    
 
+router.use('/rod', require('routes/rod'));
 router.use('/person', require('routes/person'));
 
 app.use(router.routes());
