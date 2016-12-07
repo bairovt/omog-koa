@@ -6,6 +6,7 @@ const path = require('path');
 const Router = require('koa-router');
 const aql = require('arangojs').aql;
 const db = require('modules/arangodb');
+const filters = require('modules/swig-filters');
 const bodyparser = require('koa-bodyparser');
 
 const app = new Koa();
@@ -24,7 +25,8 @@ app.context.render = render({
 	root: __dirname + '/templates',//path.join(__dirname, 'templates'),
 	autoescape: true,
 	cache: false, //memory, disable, set to false
-	ext: 'html'
+	ext: 'html',
+    filters
 	// locals: locals
 });
 app.use(bodyparser());

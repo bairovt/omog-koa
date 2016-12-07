@@ -10,9 +10,10 @@ const router = new Router();
 
 // router.use('/', require('routes/main'));
 function* rod(next) { //key
-    let Rod = db.collection('Rod');
+    let Rod = db.collection('Rod');    //todo: добавить обработку ошибки ArangoError: document not found, если коллекция не найдена
     let key = this.params.key;
-    let rod = yield Rod.document(key);
+    let rod = yield Rod.document(key);  //todo: добавить обработку ошибки ArangoError: document not found, если документ не найден
+    // if (rod === undefined) this.throw(404);
     
     let personsCur = yield db.query(aql`FOR p IN Persons
                                             FILTER p.rod == ${'Rod/'+key}

@@ -11,10 +11,19 @@ const {nameProc, personKeyGen} = utils;
 const router = new Router();
 
 // Person page
-function* getPerson(next) { 
-    let Persons = db.collection('Persons');
-    let person = yield Persons.document(this.params._key);   
-    // let _id = `Persons/${this.params._key}`;    
+function* getPerson(next) {    
+    let key = this.params._key;        
+    let cursor = yield db.query(aql`
+        FOR p IN Persons
+            FILTER p._key == ${key}
+            FOR r IN Rod                
+                FILTER p.rod == r._id
+            FOR added IN Persons
+                FILTER p.addedBy == added._id
+                RETURN merge(p, {rod: {name: r.name, _key: r._key}, addedBy: {name: added.name, _key: added._key}})
+    `);    
+    let person = yield cursor.next();
+    if (person === undefined) this.throw(404);    
 
     // находим предков персоны
     let ancestorsCursor = yield db.query(
