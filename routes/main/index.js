@@ -27,16 +27,15 @@ let Persons = db.collection('Persons');
 
 router
     .get('/login', function*(next){
-        if (this.session.user) this.redirect('/person/'+this.session.user._key);
+        if (this.session.user) this.redirect('/person/'+this.session.user.key);
         this.body = yield this.render('login');
     })
     .post('/login', function* (next){
         // yield* authenticate(login, password, this);
         let {email, password} = this.request.body;
-        let person = yield Persons.firstExample({email: email});
-        console.log(person);
+        let person = yield Persons.firstExample({email: email});        
         if (person && person.password == password) {
-            this.session.user = person;
+            this.session.user = {key: person._key, id: person._id, name: person.name};
             this.redirect('/'); // todo: сделать возврат на запрашиваемую страницу
         }
         this.redirect('/login')        

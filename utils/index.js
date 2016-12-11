@@ -10,9 +10,16 @@ function nameProc(name) {
 	return name;
 };
 
+function textProc(text) {
+	text = text.trim(); // убираем пробелы по краям
+	if (text === "") return "";
+	text = text[0].toUpperCase() + text.slice(1); // первая буква - большая
+	return text;
+};
+
 async function personKeyGen(fullname) {
-	// транслитерация
-	let _key = translit(fullname.replace(/\s/g, "")); // удалить все пробелы
+	// транслитерация todo: проверить работу транслита с иностр. язык
+	let _key = translit(fullname.replace(/\s/g, "")); // удалить все пробелы, 
 	// найти все совпадения в коллекции
 	let cursor = await db.query(aql`FOR p IN Persons
 	    FILTER p._key LIKE ${_key+'%'}
@@ -28,4 +35,4 @@ async function personKeyGen(fullname) {
 	return newKey;
 };
 
-module.exports = {nameProc, personKeyGen};
+module.exports = {nameProc, textProc, personKeyGen};

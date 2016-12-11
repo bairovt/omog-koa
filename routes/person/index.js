@@ -6,23 +6,28 @@ const aql = require('arangojs').aql;
 const Router = require('koa-router');
 // const authorize =require('middleware/authorize');
 const utils = require('utils')
-const {nameProc, personKeyGen} = utils;
+const {nameProc, textProc, personKeyGen} = utils;
 
 const router = new Router();
 
 // Person page
 function* getPerson(next) {    
-    let key = this.params._key;        
+    let key = this.params.key;    
+    //извлечь персону с родом и добавившим
     let cursor = yield db.query(aql`
-        FOR p IN Persons
-            FILTER p._key == ${key}
-            FOR r IN Rod                
-                FILTER p.rod == r._id
-            FOR added IN Persons
-                FILTER p.addedBy == added._id
-                RETURN merge(p, {rod: {name: r.name, _key: r._key}, addedBy: {name: added.name, _key: added._key}})
-    `);    
-    let person = yield cursor.next();
+    FOR p IN Persons
+        FILTER p._key == ${key}
+        RETURN merge(p, { 
+            rod: FIRST(FOR rod IN Rod            
+                    FILTER p.rod == rod._id
+                    RETURN {name: rod.name, key: rod._key}),
+            addedBy: FIRST(FOR added IN Persons
+                        FILTER added._id == p.addedBy
+                        RETURN {name: added.name, key: added._key})
+        })`
+    );
+    
+    let person = yield cursor.next();    
     if (person === undefined) this.throw(404);    
 
     // находим предков персоны
@@ -61,8 +66,8 @@ function* addPerson(next){ //rel, _key
     // _key - ключ существующего person, к которому добавляем нового person
     let Persons = db.collection('Persons');
     let Child = db.edgeCollection('child');
-    let {_key, rel} = this.params;
-    let person = yield Persons.document(_key);
+    let {key, rel} = this.params;
+    let person = yield Persons.document(key);
     if (this.method == "POST") {
 
         
@@ -71,18 +76,19 @@ function* addPerson(next){ //rel, _key
         // todo: Валидация формы
         // проверка имени на спецсимволы!!! (разрешены только буквы и "-")
         // name обязательно, surname и midname - нет        
-        let {surname, name, midname} = this.request.body;
+        let {surname, name, midname, lifestory} = this.request.body;
         surname = nameProc(surname);
         name = nameProc(name);
-        midname = nameProc(midname);        
+        midname = nameProc(midname);
+        lifestory = textProc(lifestory);
         let fullname = `${surname} ${name} ${midname}`;
         let gender = 1;
 
         let created = new Date();
         let newPerson = {
             _key: yield personKeyGen(fullname),
-            name, surname, midname, fullname, gender, created,
-            addedBy: this.session._key  //кем добавлен
+            name, surname, midname, fullname, lifestory, gender, created,
+            addedBy: this.session.user.id  //кем добавлен
         };
         // если жен.
         if (rel == 'mother' || rel == 'daughter' ) {
@@ -94,19 +100,19 @@ function* addPerson(next){ //rel, _key
         let _from, _to;
         if (rel == 'father' || rel == 'mother' ) {
             _from = 'Persons/' + newPerson._key;
-            _to = 'Persons/' + _key;
+            _to = 'Persons/' + key;
         } else if (rel == 'son' || rel == 'daughter' ) {
-            _from = 'Persons/' + _key;
+            _from = 'Persons/' + key;
             _to = 'Persons/' + newPerson._key;
         }        
 
         let childEdge = {            
             created,
-            addedBy: this.session._key
+            addedBy: this.session.user.id
         }
         yield Child.save(childEdge, _from, _to);
 
-        this.redirect(`/person/${_key}`);
+        this.redirect(`/person/${key}`);
     } // end POST
     // GET
     let relationDict = {father: 'отца', mother: 'мать', son: 'сына', daughter: 'дочь'};
@@ -116,10 +122,10 @@ function* addPerson(next){ //rel, _key
 
 // /person
 router    
-    .get('/:_key', getPerson)    // страница человека
+    .get('/:key', getPerson)    // страница человека
     //.use(authorize(['admin', 'manager']))
-    .get('/:_key/add/:rel', addPerson)   // страница добавления человека 
-    .post('/:_key/add/:rel', addPerson);    // обработка добавления человека
+    .get('/:key/add/:rel', addPerson)   // страница добавления человека 
+    .post('/:key/add/:rel', addPerson);    // обработка добавления человека
     
 
 module.exports = router.routes();

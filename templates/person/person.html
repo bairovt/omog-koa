@@ -6,12 +6,18 @@
 <h2>{{person.fullname}}</h2>
 <p>{{person.lifestory}}</p>
 
+{#{% if person.rods.length %}
+	<p>Род: 
+	{% for rod in person.rods %}<a href="/rod/{{rod.key}}">{{rod.name}} {% endfor %}</a>
+	</p>
+{% endif %}#}
+
 {% if person.rod %}
-	<p>Род: <a href="/rod/{{person.rod._key}}">{{person.rod.name}}</a></p>
+	<p>Род: <a href="/rod/{{person.rod.key}}">{{person.rod.name}}</a></p>
 {% endif %}
 
 <p>Год рождения: {{person.born}}</p>
-<p>Добавил: <a href="/person/{{person.addedBy._key}}">{{person.addedBy.name}}</a></p>
+<p>Добавил: <a href="/person/{{person.addedBy.key}}">{{person.addedBy.name}}</a></p>
 
 {% if person.gender == 0 %} 
  	<p>Девичья фамилия: {{person.maidenName}}</p> 
