@@ -14,7 +14,7 @@ const app = new Koa();
 app.keys = ['SlvmsKJHksdfSDFaflk'] // config.get('sekret')
 
 // if (app.env !== 'production') app.use(require('koa-static')(path.join(config.get('root'),'public')));
-if (app.env !== 'production') app.use(require('koa-static')('/home/tumen/nodejs/rod.so/public'));
+if (app.env !== 'production') app.use(require('koa-static')('public')); // /home/tumen/nodejs/rod.so/public
 // инициализация сессий
 var SESSCONFIG = {
   key: 'user:sess', /** (string) cookie key (default is koa:sess) */
