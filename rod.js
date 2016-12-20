@@ -1,5 +1,6 @@
 'use strict';
 const Koa = require('koa');
+const config = require('config');
 const session = require('koa-session');
 const render = require('koa-swig');
 const path = require('path');
@@ -11,10 +12,9 @@ const bodyparser = require('koa-bodyparser');
 
 
 const app = new Koa();
-app.keys = ['SlvmsKJHksdfSDFaflk'] // config.get('sekret')
+app.keys = config.get('secret');
 
-// if (app.env !== 'production') app.use(require('koa-static')(path.join(config.get('root'),'public')));
-if (app.env !== 'production') app.use(require('koa-static')('public')); // /home/tumen/nodejs/rod.so/public
+if (app.env !== 'production') app.use(require('koa-static')(path.join(config.get('root'),'public')));
 // инициализация сессий
 var SESSCONFIG = {
   key: 'user:sess', /** (string) cookie key (default is koa:sess) */
@@ -93,5 +93,10 @@ router.use('/person', require('routes/person'));
 
 app.use(router.routes());
 
-app.listen(8000);
-console.log('Listening on 8000')
+if (module.parent) {
+    module.exports = app;
+} else {
+    let port = config.server.port;
+    app.listen(port);
+    console.log(`ROD.SO listening on port ${port}`)
+};
