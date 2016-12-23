@@ -118,14 +118,23 @@ function* addPerson(next){ //rel, _key
     let relationDict = {father: 'отца', mother: 'мать', son: 'сына', daughter: 'дочь'};
 
     yield this.render('person/add_person', {person, rel, relation: relationDict[rel]});
-};
+}
+
+function* removePerson(next) { // key
+    const key = this.params.key;
+    const childrenGraph = db.graph('childrenGraph');
+    const graphCollection = childrenGraph.vertexCollection('Persons');
+    yield graphCollection.remove(key); // todo: добавить обработку исключения неверного ключа
+    this.redirect('/'); // todo: добавить сообщение об успешном удалении
+}
 
 // /person
 router    
     .get('/:key', getPerson)    // страница человека
     //.use(authorize(['admin', 'manager']))
     .get('/:key/add/:rel', addPerson)   // страница добавления человека 
-    .post('/:key/add/:rel', addPerson);    // обработка добавления человека
+    .post('/:key/add/:rel', addPerson)    // обработка добавления человека
+    .get('/:key/remove', removePerson);
     
 
 module.exports = router.routes();
