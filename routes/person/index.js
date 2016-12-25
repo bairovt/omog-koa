@@ -5,74 +5,60 @@ const db = require('modules/arangodb');
 const aql = require('arangojs').aql;
 const Router = require('koa-router');
 // const authorize =require('middleware/authorize');
-const utils = require('utils')
+const utils = require('utils');
 const {nameProc, textProc, personKeyGen} = utils;
 
 const router = new Router();
 
-// Person page
-function* getPerson(next) {    
+/* Person page */
+function* getPerson(next) {
     let key = this.params.key;    
     //извлечь персону с родом и добавившим
-    let cursor = yield db.query(aql`
-    FOR p IN Persons
-        FILTER p._key == ${key}
-        RETURN merge(p, { 
-            rod: FIRST(FOR rod IN Rod            
-                    FILTER p.rod == rod._id
-                    RETURN {name: rod.name, key: rod._key}),
-            addedBy: FIRST(FOR added IN Persons
-                        FILTER added._id == p.addedBy
-                        RETURN {name: added.name, key: added._key})
-        })`
-    );
-    
-    let person = yield cursor.next();    
-    if (person === undefined) this.throw(404);    
+    let person = yield db.query(aql`
+        FOR p IN Persons
+            FILTER p._key == ${key}
+            RETURN merge(p, { 
+                rod: FIRST(FOR rod IN Rod            
+                        FILTER p.rod == rod._id
+                        RETURN {name: rod.name, key: rod._key}),
+                addedBy: FIRST(FOR added IN Persons
+                            FILTER added._id == p.addedBy
+                            RETURN {name: added.name, key: added._key})
+            })`
+        ).then(cursor => cursor.next());
+    if (person === undefined) this.throw(404); // check existence
 
     // находим предков персоны
-    let ancestorsCursor = yield db.query(
-        // начинаем с 0 чтобы не делать еще 1 запрос для получения person
+    let ancestors = yield db.query(
         aql`FOR v, e, p
             IN 1..100 INBOUND
             ${person._id}
             GRAPH 'childrenGraph'
             OPTIONS {bfs: true}
             RETURN {person: v, edges: p.edges}`
-    );
-    
-    let ancestors = yield ancestorsCursor.all(); // if IN 0..100 INBOUND => ancestors[0] is person
-    
-    // let person = ancestors[0].person; //извлекаем персону
-    // ancestors.splice(0, 1); // удалить персону из массива предков
+        ).then(cursor => cursor.all());
 
     // находим потомков персоны
-    let descendantsCursor = yield db.query(
-        // начинаем с 0 чтобы не делать еще 1 запрос для получения person
+    let descendants = yield db.query(
         aql`FOR v, e, p
             IN 1..100 OUTBOUND
             ${person._id}
             GRAPH 'childrenGraph'
             OPTIONS {bfs: true}
             RETURN {person: v, edges: p.edges}`
-    );
+        ).then(cursor => cursor.all());
 
-    let descendants = yield descendantsCursor.all()
     yield this.render("person/person", { person, ancestors, descendants }); //gens, gensCount
-};
+}
 
-function* addPerson(next){ //rel, _key
+function* addPerson(next){ //key, rel
+    // key - ключ существующего person, к которому добавляем нового person
     // rel: "father", "mother", "son", "daughter"
-    // _key - ключ существующего person, к которому добавляем нового person
     let Persons = db.collection('Persons');
     let Child = db.edgeCollection('child');
     let {key, rel} = this.params;
     let person = yield Persons.document(key);
     if (this.method == "POST") {
-
-        
-        let childColl = db.edgeCollection('child');
-
         // todo: Валидация формы
         // проверка имени на спецсимволы!!! (разрешены только буквы и "-")
         // name обязательно, surname и midname - нет        
@@ -97,26 +83,25 @@ function* addPerson(next){ //rel, _key
         }        
         yield Persons.save(newPerson);
         // create parent edge        
-        let _from, _to;
+        let from, to;
         if (rel == 'father' || rel == 'mother' ) {
-            _from = 'Persons/' + newPerson._key;
-            _to = 'Persons/' + key;
+            from = 'Persons/' + newPerson._key;
+            to = 'Persons/' + key;
         } else if (rel == 'son' || rel == 'daughter' ) {
-            _from = 'Persons/' + key;
-            _to = 'Persons/' + newPerson._key;
+            from = 'Persons/' + key;
+            to = 'Persons/' + newPerson._key;
         }        
 
         let childEdge = {            
             created,
             addedBy: this.session.user.id
-        }
-        yield Child.save(childEdge, _from, _to);
-
+        };
+        yield Child.save(childEdge, from, to);
         this.redirect(`/person/${key}`);
     } // end POST
     // GET
     let relationDict = {father: 'отца', mother: 'мать', son: 'сына', daughter: 'дочь'};
-
+    // todo: убрать дивичью фамилию при добавлении муж
     yield this.render('person/add_person', {person, rel, relation: relationDict[rel]});
 }
 
@@ -125,7 +110,7 @@ function* removePerson(next) { // key
     const childrenGraph = db.graph('childrenGraph');
     const graphCollection = childrenGraph.vertexCollection('Persons');
     yield graphCollection.remove(key); // todo: добавить обработку исключения неверного ключа
-    this.redirect('/'); // todo: добавить сообщение об успешном удалении
+    this.redirect('/all'); // todo: добавить сообщение об успешном удалении
 }
 
 // /person

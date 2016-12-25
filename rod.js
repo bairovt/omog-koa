@@ -7,35 +7,25 @@ const path = require('path');
 const Router = require('koa-router');
 const aql = require('arangojs').aql;
 const db = require('modules/arangodb');
-//const filters = require('modules/swig-filters');
 const bodyparser = require('koa-bodyparser');
 const ROOT = config.get('root');
 
-
 const app = new Koa();
-app.keys = config.get('secret');
-
-// подключение статики на деве
-if (app.env !== 'production') app.use(require('koa-static')(path.join(ROOT,'public')));
-// инициализация сессий
-app.use(session(config.get('session'), app));
-// подключение шаблонизатова swig
-app.context.render = render(config.get('swig'));
+app.keys = config.get('secretKeys');
+/* middle wares */
+if (app.env !== 'production') app.use(require('koa-static')(path.join(ROOT,'public'))); // статика, кроме production
+if (app.env == 'development') app.use(require('koa-logger')()); // логгер на деве
+app.context.render = render(config.get('swig')); // подключение шаблонизатова swig
+app.use(require('middleware/errors')); // обработка ошибок
+app.use(session(config.get('session'), app)); // инициализация сессий
 app.use(bodyparser());
-
-// вход (аутентификация) обязателен для всех роутов
-app.use(function* (next){
-	console.log('URL: ', this.request.url);
-	if (!this.session.user && this.request.url != '/login') this.redirect('/login');	
-	yield next;
-});
-
+/* routing */
 const router = new Router();
+router.use(require('middleware/is_authenticated')); // проверка аутентификации, обязателена для всех роутов
 
 // router.use('/', require('routes/main'));
 function* main(next) {  
-    let cursor = yield db.query(aql`FOR r IN Rod                                        
-                                        RETURN r`);
+    let cursor = yield db.query(aql`FOR r IN Rod RETURN r`);
     let rods = yield cursor.all();
     yield this.render("main", { rods });    
 }
@@ -48,20 +38,16 @@ function* all(next) {
 
 router
     .get('/login', function*(next){
-        if (this.session.user) this.redirect('/person/'+this.session.user._key);
+        if (this.session.user) this.redirect('/person/'+this.session.user.key);
         this.body = yield this.render('login');
     })
     .post('/login', function* (next){
         // yield* authenticate(login, password, this);
         let {email, password} = this.request.body;
-        console.log(email, password);
-        let cursor = yield db.query(aql`FOR p IN Persons FILTER p.email == ${email} RETURN p`);
-        let result = yield cursor.all();
-        let person = result[0];
-        console.log('login person: ', person);
-
+        let Persons = db.collection('Persons');
+        let person = yield Persons.firstExample({email});
         if (person && person.password == password) {
-            this.session.user = person;
+            this.session.user = {key: person._key, id: person._id, name: person.name};
             this.redirect('/'); // todo: сделать возврат на запрашиваемую страницу
         }
         this.redirect('/login')        
@@ -78,8 +64,8 @@ router
 
 router.use('/rod', require('routes/rod'));
 router.use('/person', require('routes/person'));
-
 app.use(router.routes());
+
 // start koa server
 if (module.parent) {
     module.exports = app;
