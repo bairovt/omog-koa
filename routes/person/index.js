@@ -1,6 +1,4 @@
 'use strict';
-
-// Person section
 const db = require('modules/arangodb');
 const aql = require('arangojs').aql;
 const Router = require('koa-router');
@@ -102,9 +100,10 @@ function* addPerson(next){ //key, rel
     // GET
     let relationDict = {father: 'отца', mother: 'мать', son: 'сына', daughter: 'дочь'};
     // todo: убрать дивичью фамилию при добавлении муж
-    yield this.render('person/add_person', {person, rel, relation: relationDict[rel]});
+    yield this.render('person/add_person.html', {person, rel, relation: relationDict[rel]});
 }
 
+/* правильное удаление Person (вершины графа удалять вместе со связями) */
 function* removePerson(next) { // key
     const key = this.params.key;
     const childrenGraph = db.graph('childrenGraph');
@@ -113,7 +112,7 @@ function* removePerson(next) { // key
     this.redirect('/all'); // todo: добавить сообщение об успешном удалении
 }
 
-// /person
+/* /person */
 router    
     .get('/:key', getPerson)    // страница человека
     //.use(authorize(['admin', 'manager']))
@@ -125,12 +124,13 @@ router
 module.exports = router.routes();
 
 
-    // // формируем объект массивов поколений: ключ - глубина колена, значение - массив предков этого колена
-    // let gens = ancestors.reduce(function(gens, current, index) {
-    //  if (index == 0) return gens; // игнорируем 0-й элемент (person)
-    //  let i = current.edges.length; // глубина колена текущего предка
-    //  if (typeof gens[i] === 'undefined') gens[i] = []; // инициируем массив предков i-го колена, если его нет
-    //  gens[i].push(cursor.fullname); // добавляем предка в массив предков i-го колена
-    //  return gens;
-    // }, {}); // на входе пустой объект
-    // let gensCount = Object.keys(gens).length;
+/* // формируем объект массивов поколений: ключ - глубина колена, значение - массив предков этого колена
+let gens = ancestors.reduce(function(gens, current, index) {
+ if (index == 0) return gens; // игнорируем 0-й элемент (person)
+ let i = current.edges.length; // глубина колена текущего предка
+ if (typeof gens[i] === 'undefined') gens[i] = []; // инициируем массив предков i-го колена, если его нет
+ gens[i].push(cursor.fullname); // добавляем предка в массив предков i-го колена
+ return gens;
+}, {}); // на входе пустой объект
+let gensCount = Object.keys(gens).length;
+ */

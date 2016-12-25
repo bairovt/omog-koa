@@ -1,7 +1,7 @@
 'use strict';
 
-let months = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
-
+let months = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль',
+				'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
 
 function getRusMonth(date){
 	return months[date.getMonth()];
@@ -36,7 +36,5 @@ function descendantRelation(d){
 		return "колено " + d.edges.length;
 	}
 }
-
-
 
 module.exports = {getRusMonth, ancestorRelation, descendantRelation};
