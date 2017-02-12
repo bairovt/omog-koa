@@ -22,7 +22,8 @@ router.use(require('middleware/is_authenticated')); // проверка ауте
 router
     .use(require('routes/main'))
     .use('/rod', require('routes/rod'))
-    .use('/person', require('routes/person'));
+    .use('/person', require('routes/person'))
+    .use('/ajax', require('routes/ajax'));
 
 app.use(router.routes());
 

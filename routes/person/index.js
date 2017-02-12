@@ -31,7 +31,7 @@ function* getPerson(next) {
         aql`FOR v, e, p
             IN 1..100 INBOUND
             ${person._id}
-            GRAPH 'childrenGraph'
+            GRAPH 'childGraph'
             OPTIONS {bfs: true}
             RETURN {person: v, edges: p.edges}`
         ).then(cursor => cursor.all());
@@ -41,7 +41,7 @@ function* getPerson(next) {
         aql`FOR v, e, p
             IN 1..100 OUTBOUND
             ${person._id}
-            GRAPH 'childrenGraph'
+            GRAPH 'childGraph'
             OPTIONS {bfs: true}
             RETURN {person: v, edges: p.edges}`
         ).then(cursor => cursor.all());
@@ -106,8 +106,8 @@ function* addPerson(next){ //key, rel
 /* правильное удаление Person (вершины графа удалять вместе со связями) */
 function* removePerson(next) { // key
     const key = this.params.key;
-    const childrenGraph = db.graph('childrenGraph');
-    const graphCollection = childrenGraph.vertexCollection('Persons');
+    const childGraph = db.graph('childGraph');
+    const graphCollection = childGraph.vertexCollection('Persons');
     yield graphCollection.remove(key); // todo: добавить обработку исключения неверного ключа
     this.redirect('/all'); // todo: добавить сообщение об успешном удалении
 }
