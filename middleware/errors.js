@@ -9,7 +9,7 @@ module.exports = function* (next) {
         else if (err.name == 'ValidationError') {
             this.throw(400, err.message);
         }
-        else if (err.name = 'ArangoError') {
+        else if (err.name == 'ArangoError') {
             if (err.code == 404) this.throw(404); // document not found
             else this.throw(500, err.name + ': ' + err.message);
         }

@@ -13,7 +13,7 @@ function* index(next) {
 }
 
 function* all(next) {
-    let cursor = yield db.query(aql`FOR p IN Persons SORT p.fullname RETURN p`);
+    let cursor = yield db.query(aql`FOR p IN Persons SORT p.name RETURN p`);
     let persons = yield cursor.all();
     yield this.render("all", { persons });
 }
@@ -29,7 +29,8 @@ function* postLogin(next){
     let Persons = db.collection('Persons');
     let person = yield Persons.firstExample({email});
     if (person && person.password == password) {
-        this.session.user = {key: person._key, id: person._id, name: person.name};
+        this.session.user = {key: person._key, id: person._id, name: person.name, roles: person.roles};
+        this.state.username = person.name;
         this.redirect('/'); // todo: сделать возврат на запрашиваемую страницу
     }
     this.redirect('/login');

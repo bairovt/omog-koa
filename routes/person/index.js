@@ -3,6 +3,7 @@ const db = require('modules/arangodb');
 const aql = require('arangojs').aql;
 const Router = require('koa-router');
 // const authorize =require('middleware/authorize');
+const allow =require('middleware/allow');
 const utils = require('utils');
 const {nameProc, textProc, personKeyGen} = utils;
 
@@ -115,10 +116,10 @@ function* removePerson(next) { // key
 /* /person */
 router    
     .get('/:key', getPerson)    // страница человека
-    //.use(authorize(['admin', 'manager']))
     .get('/:key/add/:rel', addPerson)   // страница добавления человека 
     .post('/:key/add/:rel', addPerson)    // обработка добавления человека
-    .get('/:key/remove', removePerson);
+    // .use(allow(['manager']))
+    .get('/:key/remove', allow(['manager']), removePerson);
     
 
 module.exports = router.routes();
