@@ -5,7 +5,7 @@
 <h2>Все персоны</h2>
 <ul>
 	{% for p in persons %}
-	<li><a href="/person/{{ p._key }}">{{ p.surname }} {{ p.name }}</a></li>
+	<li><a href="/person/{{ p._key }}">{{ p.surname }} {{ p.name }} {{ p.midname }}</a></li>
 	{% endfor %}
 </ul>
 {% endblock %}

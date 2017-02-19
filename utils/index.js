@@ -22,14 +22,24 @@ async function personKeyGen(fullname) {
 	let key = translit(fullname.replace(/\s/g, "")); // удалить все пробелы,
 	// найти все совпадения в коллекции
 	let matches = await db.query(aql`FOR p IN Persons
-	    FILTER p._key LIKE ${key+'%'}
-	    RETURN p._key`).then(cursor => cursor.all());
-    // возврат ключа, если ключ не повторяется
+		FILTER p._key LIKE ${key+'%'}	     
+		RETURN p._key`).then(cursor => cursor.all());
+	// возврат ключа, если ключ не повторяется
 	if (matches.length == 0) return key;
-    /* если такой ключ уже есть, конкатенирум инрементный индекс */
+	/* если такой ключ уже есть, конкатенирум инрементный индекс */
 	let indexes = matches.map(_key => +_key.split(key).pop()); // извлекаем индексы: SurnameNameM123 => 123
 	let maxNum = Math.max(...indexes);
 	return `${key}${maxNum+1}`; // new key
 }
 
-module.exports = {nameProc, textProc, personKeyGen};
+function isAdmin(person){
+	/* Check if user is admin */
+	return person.roles.indexOf('admin') != -1; // true or false
+}
+
+async function getPerson(key) {
+	let Persons = db.collection('Persons');
+	return await Persons.document(key);
+}
+
+module.exports = {nameProc, textProc, personKeyGen, isAdmin, getPerson};

@@ -5,13 +5,14 @@ const Router = require('koa-router');
 // const authorize =require('middleware/authorize');
 const allow =require('middleware/allow');
 const utils = require('utils');
-const {nameProc, textProc, personKeyGen} = utils;
+const {nameProc, textProc, personKeyGen, isAdmin, getPerson} = utils;
 
 const router = new Router();
 
 /* Person page */
-function* getPerson(next) {
-    let key = this.params.key;    
+function* getPersonPage(next) {
+    let key = this.params.key;
+    if (key === undefined) key = this.session.user.key; // если заход на персональную страницу юзера
     //извлечь персону с родом и добавившим
     let person = yield db.query(aql`
         FOR p IN Persons
@@ -50,76 +51,131 @@ function* getPerson(next) {
     yield this.render("person/person", { person, ancestors, descendants }); //gens, gensCount
 }
 
-function* addPerson(next){ //key, rel
-    // key - ключ существующего person, к которому добавляем нового person
-    // rel: "father", "mother", "son", "daughter"
-    let Persons = db.collection('Persons');
-    let Child = db.edgeCollection('child');
-    let {key, rel} = this.params;
-    let person = yield Persons.document(key);
-    if (this.method == "POST") {
-        // todo: Валидация формы
-        // проверка имени на спецсимволы!!! (разрешены только буквы и "-")
-        // name обязательно, surname и midname - нет        
-        let {surname, name, midname, lifestory} = this.request.body;
-        surname = nameProc(surname);
-        name = nameProc(name);
-        midname = nameProc(midname);
-        lifestory = textProc(lifestory);
-        let fullname = `${surname} ${name} ${midname}`;
-        let gender = 1;
+const RELATION = {father: 'отца', mother: 'мать', son: 'сына', daughter: 'дочь'};
 
-        let created = new Date();
-        let newPerson = {
-            _key: yield personKeyGen(fullname),
-            name, surname, midname, fullname, lifestory, gender, created,
-            addedBy: this.session.user.id  //кем добавлен
-        };
-        // если жен.
-        if (rel == 'mother' || rel == 'daughter' ) {
-            newPerson.gender = 0;                                //изменить пол на 0
-            newPerson.maidenName = this.request.body.maidenName; //добавить девичью фамилию
-        }        
-        yield Persons.save(newPerson);
-        // create parent edge        
-        let from, to;
-        if (rel == 'father' || rel == 'mother' ) {
-            from = 'Persons/' + newPerson._key;
-            to = 'Persons/' + key;
-        } else if (rel == 'son' || rel == 'daughter' ) {
-            from = 'Persons/' + key;
-            to = 'Persons/' + newPerson._key;
-        }        
+function* addPersonGet(next) {
+	let {key, reltype} = this.params;
+	let person = yield getPerson(key);
+	yield this.render('person/add_person.html', {person, reltype, relation: RELATION[reltype]});
+}
 
-        let childEdge = {            
-            created,
-            addedBy: this.session.user.id
-        };
-        yield Child.save(childEdge, from, to);
-        this.redirect(`/person/${key}`);
-    } // end POST
-    // GET
-    let relationDict = {father: 'отца', mother: 'мать', son: 'сына', daughter: 'дочь'};
-    // todo: убрать дивичью фамилию при добавлении муж
-    yield this.render('person/add_person.html', {person, rel, relation: relationDict[rel]});
+function* addPersonPost(next){ //key, reltype
+	// key - ключ существующего person, к которому добавляем нового person
+   // reltype: "father", "mother", "son", "daughter"
+	const Persons = db.collection('Persons');
+	const Child = db.edgeCollection('child');
+	const {key, reltype} = this.params;
+	const person = yield getPerson(key);
+
+	// todo: Валидация формы
+	// проверка имени на спецсимволы!!! (разрешены только буквы и "-")
+	// name обязательно, surname и midname - нет
+	let {surname, name, midname, lifestory} = this.request.body;
+	surname = nameProc(surname);
+	name = nameProc(name);
+	midname = nameProc(midname);
+	lifestory = textProc(lifestory);
+	let fullname = `${surname} ${name} ${midname}`;
+	let gender = 1;
+
+	let created = new Date();
+	let newPerson = {
+		_key: yield personKeyGen(fullname),
+	   name, surname, midname, fullname, lifestory, gender, created,
+	   addedBy: this.session.user.id  //кем добавлен
+	};
+	// если жен.
+	if (reltype == 'mother' || reltype == 'daughter' ) {
+	   newPerson.gender = 0;                                //изменить пол на 0
+	   newPerson.maidenName = this.request.body.maidenName; //добавить девичью фамилию
+	}
+	yield Persons.save(newPerson);
+	// create parent edge
+	let from, to;
+	if (reltype == 'father' || reltype == 'mother' ) {
+	   from = 'Persons/' + newPerson._key;
+	   to = 'Persons/' + key;
+	} else if (reltype == 'son' || reltype == 'daughter' ) {
+	   from = 'Persons/' + key;
+	   to = 'Persons/' + newPerson._key;
+	}
+
+	let childEdge = {
+	   created,
+	   addedBy: this.session.user.id
+	};
+	yield Child.save(childEdge, from, to);
+	this.redirect(`/person/${key}`);
+}
+
+function* linkRelationGet(){
+	let {key, reltype} = this.params;
+	let person = yield getPerson(key);
+	yield this.render('person/link_relation.html', {person, reltype, relation: RELATION[reltype]});
+}
+
+function* linkRelationPost(){
+	//todo: соединение только своих персон (кроме админа и модератора)
+	//todo: запрос на соединение с чужой персоной
+	//todo: запрет указания родителей, если родители уже есть
+	//todo: проверка пола
+
+	let {start_key, end_key, reltype} = this.request.body;
+
+	let from = start_key, to = end_key; // if reltype: 'son' or 'daughter' (child)
+	if (reltype == 'mother' || reltype == 'father') { // reverse direction (parent)
+		from = end_key;
+		to = start_key;
+	}
+
+	const fromPerson = yield getPerson(from);
+	const toPerson = yield getPerson(to);
+
+	const Child = db.edgeCollection('child');
+	let childEdge = {
+		created: new Date(),
+		addedBy: this.session.user.id
+	};
+	console.log(`from: ${from}, to: ${to}, reltype: ${reltype}`);
+	yield Child.save(childEdge, fromPerson._id, toPerson._id);
+	this.redirect(`/person/${start_key}`);
 }
 
 /* правильное удаление Person (вершины графа удалять вместе со связями) */
 function* removePerson(next) { // key
     const key = this.params.key;
-    const childGraph = db.graph('childGraph');
-    const graphCollection = childGraph.vertexCollection('Persons');
-    yield graphCollection.remove(key); // todo: добавить обработку исключения неверного ключа
-    this.redirect('/all'); // todo: добавить сообщение об успешном удалении
+    const user = this.session.user; // current user
+    /* санкции удаления персон:
+        moderator (все кроме тех, которых добавил админ)
+        manager (только тех, кого добавил сам)
+        user (только тех, кого добавил сам)
+     */
+		const personsCollection = db.collection('Persons');
+		const person = yield personsCollection.document(key); //person to remove
+
+		console.log(`person.addedBy: ${person.addedBy}, user._id: ${user.id}`);
+
+		if (person.addedBy === user.id || isAdmin(user)) {
+			// правильное удаление вершины графа
+			const childGraph = db.graph('childGraph');
+			const vertexCollection = childGraph.vertexCollection('Persons');
+			yield vertexCollection.remove(key); // todo: добавить обработку исключения неверного ключа
+			this.redirect('/all'); // todo: добавить сообщение об успешном удалении
+		} else {
+			this.throw(403, 'Forbidden');
+		}
 }
 
 /* /person */
-router    
-    .get('/:key', getPerson)    // страница человека
-    .get('/:key/add/:rel', addPerson)   // страница добавления человека 
-    .post('/:key/add/:rel', addPerson)    // обработка добавления человека
-    // .use(allow(['manager']))
-    .get('/:key/remove', allow(['manager']), removePerson);
+router
+   .get('/', getPersonPage)    // своя страница
+   .get('/:key', getPersonPage)    // страница персоны
+   .get('/:key/add/:reltype', addPersonGet)   // страница добавления персоны
+   .post('/:key/add/:reltype', addPersonPost)    // обработка добавления персоны
+	.get('/:key/link/:reltype', linkRelationGet)    // своя страница
+	.post('/link', linkRelationPost)    // своя страница
+   // .use(allow(['manager']))
+   .get('/:key/remove', allow(['moderator', 'manager']), removePerson);
     
 
 module.exports = router.routes();

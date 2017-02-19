@@ -33,7 +33,8 @@
 			{% endif %}
 
 			<p>Год рождения: {{person.born}}</p>
-			<p>Добавил: <a href="/person/{{person.addedBy.key}}">{{person.addedBy.name}}</a></p>
+			<p>Добавил: <a href="/person/{{person.addedBy.key}}">{{person.addedBy.surname}} {{person.addedBy.name}}</a></p>
+			<p>id: {{person._key}}</p>
 
 			{% if person.gender == 0 %}
 			<p>Девичья фамилия: {{person.maidenName}}</p>
@@ -46,6 +47,13 @@
 				<a href="/person/{{person._key}}/add/mother">мать</a> |
 				<a href="/person/{{person._key}}/add/son">сына</a> |
 				<a href="/person/{{person._key}}/add/daughter">дочь</a>
+			</p>
+			<p> <!-- todo: проработать права на указание -->
+				Указать
+				<a href="/person/{{person._key}}/link/father">отца</a> |
+				<a href="/person/{{person._key}}/link/mother">мать</a> |
+				<a href="/person/{{person._key}}/link/son">сына</a> |
+				<a href="/person/{{person._key}}/link/daughter">дочь</a>
 			</p>
 
 			<h3>Предки</h3>

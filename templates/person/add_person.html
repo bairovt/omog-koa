@@ -3,18 +3,22 @@
 {% block title %} Добавить родителья {% endblock %}
 
 {% block content %}
-<h2>Добавить <strong>{{relation}}</strong> для: {{person.fullname}}</h2>
 
+	<h3>Добавить <strong>{{relation}}</strong></h3>
+	<h4> для: {{person.surname}} {{person.name}} {{person.midname}}</h4>
+	<br/>
 
-<form action="/person/{{person._key}}/add/{{rel}}" method="post">
-	<input type="text" name="surname" placeholder="Фамилия">
-    <input type="text" name="name" placeholder="Имя">    
-    <input type="text" name="midname" placeholder="Отчество">    
-    <input type="text" name="maidenName" placeholder="Девичья фамилия">
-    <p></p>
-    <textarea name="lifestory" placeholder="биография" cols="40" rows="5"></textarea>
-    <button type="submit">Добавить {{relation}}</button>
-</form>
+	<form action="/person/{{person._key}}/add/{{reltype}}" method="post">
+		<p><input type="text" size="40" name="surname" placeholder="Фамилия"></p>
+		<p><input type="text" size="40" name="name" placeholder="Имя"></p>
+		<p><input type="text" size="40" name="midname" placeholder="Отчество"></p>
+		{% if reltype == 'mother' or reltype == 'daughter'%}
+			<p><input type="text" size="40" name="maidenName" placeholder="Девичья фамилия"></p>
+		{% endif %}
 
+	  <textarea name="lifestory" placeholder="Биография" cols="40" rows="5"></textarea>
+		<br/>
+	  <button type="submit">Добавить {{relation}}</button>
+	</form>
 
 {% endblock %}

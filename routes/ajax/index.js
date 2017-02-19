@@ -15,16 +15,16 @@ function* get_anc_des(next) {
 
     //извлечь персону с родом и добавившим
     let person = yield db.query(aql`
-        FOR p IN Persons
-            FILTER p._key == ${person_key}
-            RETURN merge(p, { 
-                rod: FIRST(FOR rod IN Rod            
-                        FILTER p.rod == rod._id
-                        RETURN {name: rod.name, key: rod._key}),
-                addedBy: FIRST(FOR added IN Persons
-                            FILTER added._id == p.addedBy
-                            RETURN {name: added.name, key: added._key})
-            })`
+		  FOR p IN Persons
+		      FILTER p._key == ${person_key}
+		      RETURN merge(p, { 
+		          rod: FIRST(FOR rod IN Rod            
+		                  FILTER p.rod == rod._id
+		                  RETURN {name: rod.name, key: rod._key}),
+		          addedBy: FIRST(FOR added IN Persons
+		                      FILTER added._id == p.addedBy
+		                      RETURN {name: added.name, key: added._key})
+		      })`
     ).then(cursor => cursor.next());
 
     // check existence
