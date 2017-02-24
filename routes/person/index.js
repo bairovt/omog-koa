@@ -2,8 +2,7 @@
 const db = require('modules/arangodb');
 const aql = require('arangojs').aql;
 const Router = require('koa-router');
-// const authorize =require('middleware/authorize');
-const allow =require('middleware/allow');
+const authorize =require('middleware/authorize');
 const utils = require('utils');
 const {nameProc, textProc, personKeyGen, isAdmin, getPerson} = utils;
 
@@ -18,7 +17,7 @@ function* getPersonPage(next) {
         FOR p IN Persons
             FILTER p._key == ${key}
             RETURN merge(p, { 
-                rod: FIRST(FOR rod IN Rod            
+                rod: FIRST(FOR rod IN Rods            
                         FILTER p.rod == rod._id
                         RETURN {name: rod.name, key: rod._key}),
                 addedBy: FIRST(FOR added IN Persons
@@ -115,11 +114,12 @@ function* linkRelationGet(){
 }
 
 function* linkRelationPost(){
-	//todo: соединение только своих персон (кроме админа и модератора)
+
 	//todo: запрос на соединение с чужой персоной
 	//todo: запрет указания родителей, если родители уже есть
 	//todo: проверка пола
 
+	const {user} = this.session.user;
 	let {start_key, end_key, reltype} = this.request.body;
 
 	let from = start_key, to = end_key; // if reltype: 'son' or 'daughter' (child)
@@ -131,12 +131,21 @@ function* linkRelationPost(){
 	const fromPerson = yield getPerson(from);
 	const toPerson = yield getPerson(to);
 
+	if (fromPerson.addedBy != user._id && fromPerson.addedBy != user._id) this.throw(403, 'Persons to link added by different users.');
+	//todo: соединение только своих персон (кроме админа и модератора)
+
+
+
+	//todo: запрет указания родителей, если родители уже есть
+
+
+
 	const Child = db.edgeCollection('child');
 	let childEdge = {
 		created: new Date(),
 		addedBy: this.session.user.id
 	};
-	console.log(`from: ${from}, to: ${to}, reltype: ${reltype}`);
+	// console.log(`from: ${from}, to: ${to}, reltype: ${reltype}`);
 	yield Child.save(childEdge, fromPerson._id, toPerson._id);
 	this.redirect(`/person/${start_key}`);
 }
@@ -175,7 +184,7 @@ router
 	.get('/:key/link/:reltype', linkRelationGet)    // своя страница
 	.post('/link', linkRelationPost)    // своя страница
    // .use(allow(['manager']))
-   .get('/:key/remove', allow(['moderator', 'manager']), removePerson);
+   .get('/:key/remove', authorize(['moderator', 'manager']), removePerson);
     
 
 module.exports = router.routes();

@@ -18,7 +18,7 @@ function textProc(text) {
 }
 
 async function personKeyGen(fullname) {
-	// транслитерация todo: проверить работу транслита с иностр. язык
+	// транслитерация todo: проверить работу транслита с иностр. язык (монгольский, бурядский, китайский)
 	let key = translit(fullname.replace(/\s/g, "")); // удалить все пробелы,
 	// найти все совпадения в коллекции
 	let matches = await db.query(aql`FOR p IN Persons
@@ -32,9 +32,15 @@ async function personKeyGen(fullname) {
 	return `${key}${maxNum+1}`; // new key
 }
 
-function isAdmin(person){
+function isAdmin(user){
+	//todo: доделать или удалить
 	/* Check if user is admin */
-	return person.roles.indexOf('admin') != -1; // true or false
+	return user.roles.indexOf('admin') != -1; // true or false
+}
+
+function hasRole(user){
+	/* Check if user is admin */
+	return user.roles.indexOf('admin') != -1; // true or false
 }
 
 async function getPerson(key) {

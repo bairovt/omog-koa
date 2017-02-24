@@ -4,22 +4,22 @@
 // checks if a user's role is allowed (roles)
 // all forms should use a POST method
 
-module.exports = function (roles){
+const {isAdmin} = require('utils');
+
+module.exports = function (allowedRoles){
 	return function* (next) {
+		let authorized = false;
+		let user = this.session.user;
 
-	  let authorized = roles.indexOf(this.session.urole) != -1; // true or false
+		// console.log(user.roles);
+		if (!user.roles) this.throw(401, 'Unauthorized'); // если нет массива roles
 
-	  switch (this.method) {
-	    case 'GET':
-	      //this.authorized = authorized; // for check: is request authorized
-	      this.state.authorized  = authorized; // for use in templates, state is merged to templ context
-	      break;
-	    case 'POST':
-	      this.assert(authorized, 403, 'forbidden');
-	      break;
-	    default:
-	      this.throw(400, 'bad request');
+		for (let i = 0; i < user.roles.length; i++){
+			authorized = isAdmin(user) || allowedRoles.indexOf(user.roles[i]) != -1; // is authorized, true or false, admin is all allowed
+			if (authorized) break;
+		}
+
+		if (!authorized) this.throw(401, 'Unauthorized');
+		else yield next;
 	}
-	  yield* next;
-	};
 };

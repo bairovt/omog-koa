@@ -8,20 +8,19 @@ const router = new Router();
 
 // router.use('/', require('routes/main'));
 function* rod(next) { //key
-    let Rod = db.collection('Rod');    //todo: добавить обработку ошибки ArangoError: document not found, если коллекция не найдена
+    let Rods = db.collection('Rods');
     let key = this.params.key;
-    let rod = yield Rod.document(key);  //todo: добавить обработку ошибки ArangoError: document not found, если документ не найден
-    // if (rod === undefined) this.throw(404);
+    let rod = yield Rods.document(key);
     
     let personsCur = yield db.query(aql`FOR p IN Persons
-                                            FILTER p.rod == ${'Rod/'+key}
+                                            FILTER p.rod == ${'Rods/'+key}
                                             RETURN p`);
     let persons = yield personsCur.all();   
     
     yield this.render("rod/rod", { rod, persons });
 }
 
-//main router
+//main routerF
 router.get('/:key', rod);    // страница человека
 
 module.exports=router.routes();

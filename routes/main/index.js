@@ -8,8 +8,15 @@ const router = new Router();
 
 /* main page */
 function* index(next) {
-    let rods = yield db.query(aql`FOR r IN Rod RETURN r`).then(cursor => cursor.all());
-    yield this.render("main", { rods });
+	let rods = yield db.query(aql`FOR rod IN Rods
+                                    /*FILTER rod._key == "Sharaid"*/
+												RETURN merge(rod,
+													{count: FIRST(FOR p IN Persons
+													           FILTER p.rod == rod._id
+													           COLLECT WITH COUNT INTO length
+													           RETURN length)
+													})`).then(cursor => cursor.all());
+	yield this.render("main", { rods });
 }
 
 function* all(next) {

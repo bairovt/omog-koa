@@ -4,8 +4,7 @@
 
 <ul>	
 	{% for rod in rods %}
-	<li><a href="/rod/{{ rod._key }}">{{ rod.name }}</a></li>
+	<li><a href="/rod/{{ rod._key }}">{{ rod.name }} <span class="small">{{ rod.count }}</span></a></li>
 	{% endfor %}
 </ul>
 {% endblock %}
-

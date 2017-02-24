@@ -7,7 +7,7 @@
 	born: 1985, // год рождения - изменить на полную дату???
 	gender: 1, // required: пол, женщина 0, мужчина 1
 	maidenName: "Сампилова", // Девичья фамилия у женщин
-	rod: "Rod/Sharaid", // Род "Шарайд"
+	rod: "Rods/Sharaid", // Род "Шарайд"
 	addedBy: "Persons/BairovTumenG",
 	created: "2016-12-03T12:35:03.039Z", // дата и время создания документа
 	role: "manager", //admin

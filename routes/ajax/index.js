@@ -18,7 +18,7 @@ function* get_anc_des(next) {
 		  FOR p IN Persons
 		      FILTER p._key == ${person_key}
 		      RETURN merge(p, { 
-		          rod: FIRST(FOR rod IN Rod            
+		          rod: FIRST(FOR rod IN Rods            
 		                  FILTER p.rod == rod._id
 		                  RETURN {name: rod.name, key: rod._key}),
 		          addedBy: FIRST(FOR added IN Persons
