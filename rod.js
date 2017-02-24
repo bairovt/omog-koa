@@ -5,16 +5,19 @@ const session = require('koa-session');
 const render = require('koa-swig');
 const path = require('path');
 const Router = require('koa-router');
+const koaStatic = require('koa-static');
+const logger = require('koa-logger');
+const convert = require('koa-convert'); // convert mw to koa2
 const ROOT = config.get('root');
 
 const app = new Koa();
 app.keys = config.get('secretKeys');
 /* middle wares */
-if (app.env !== 'production') app.use(require('koa-static')(path.join(ROOT,'public'))); // статика, кроме production
-if (app.env == 'development') app.use(require('koa-logger')()); // логгер на деве
+if (app.env !== 'production') app.use(convert(koaStatic(path.join(ROOT,'public')))); // статика, кроме production
+if (app.env == 'development') app.use(convert(logger())); // логгер на деве
 app.context.render = render(config.get('swig')); // подключение шаблонизатова swig
 app.use(require('middleware/errors')); // обработка ошибок
-app.use(session(config.get('session'), app)); // инициализация сессий
+app.use(convert(session(config.get('session'), app))); // инициализация сессий
 app.use(require('koa-bodyparser')());
 /* routing */
 const router = new Router();

@@ -1,21 +1,21 @@
 'use strict';
 
 /* error handler */
-module.exports = function* (next) {
+module.exports = async function (ctx, next) {
     try {
-        yield next;
+        await next();
     } catch (err){
-        if (err.status) this.throw(err.status, err.message);
+        if (err.status) ctx.throw(err.status, err.message);
         else if (err.name == 'ValidationError') {
-            this.throw(400, err.message);
+            ctx.throw(400, err.message);
         }
         else if (err.name == 'ArangoError') {
-            if (err.code == 404) this.throw(404); // document not found
-            else this.throw(500, err.name + ': ' + err.message);
+            if (err.code == 404) ctx.throw(404); // document not found
+            else ctx.throw(500, err.name + ': ' + err.message);
         }
         else {
-            this.status = 500;
-            this.body = "Ошибка на сервере. Отправлено уведомление администратору";
+            ctx.status = 500;
+            ctx.body = "Ошибка на сервере. Отправлено уведомление администратору";
             // console.error(err.message, err.stack);
             console.error(err.name, err.message, err);
         }
