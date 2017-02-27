@@ -10,14 +10,16 @@
   "license": "ISC",
   "dependencies": {
     "arangojs": "^5.4.1",
+    "co": "^4.6.0",
     "config": "^1.24.0",
     "koa": "^2.0.0-alpha.8",
     "koa-bodyparser": "^3.2.0",
     "koa-convert": "^1.2.0",
-    "koa-router": "^5.4.0",
+    "koa-router": "^7.0.1",
     "koa-session": "^3.4.0",
     "koa-static": "^2.0.0",
-    "koa-swig": "^2.2.0",
+    "koa-swig": "^2.2.1",
+    "md5": "^2.2.1",
     "transliteration": "^1.1.16"
   },
   "devDependencies": {

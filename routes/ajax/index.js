@@ -9,12 +9,12 @@ const {nameProc, textProc, personKeyGen} = utils;
 const router = new Router();
 
 /* Person page */
-function* get_anc_des(next) {
-    let {person_key} = this.params;
+async function get_anc_des(ctx, next) {
+    let {person_key} = ctx.params;
     // let person_id = "Persons/" + person_key;
 
     //извлечь персону с родом и добавившим
-    let person = yield db.query(aql`
+    let person = await db.query(aql`
 		  FOR p IN Persons
 		      FILTER p._key == ${person_key}
 		      RETURN merge(p, { 
@@ -28,10 +28,10 @@ function* get_anc_des(next) {
     ).then(cursor => cursor.next());
 
     // check existence
-    if (person === undefined) this.throw(404);
+    if (person === undefined) ctx.throw(404);
 
     // находим предков персоны
-    let ancestors = yield db.query(
+    let ancestors = await db.query(
         aql`FOR v, e, p
             IN 1..100 INBOUND
             ${person._id}
@@ -41,7 +41,7 @@ function* get_anc_des(next) {
         ).then(cursor => cursor.all());
 
     // находим потомков персоны
-    let descendants = yield db.query(
+    let descendants = await db.query(
         aql`FOR v, e, p
             IN 1..100 OUTBOUND
             ${person._id}
@@ -50,7 +50,7 @@ function* get_anc_des(next) {
             RETURN {person: v, edge: e, edges: p.edges}`
         ).then(cursor => cursor.all());
 
-    this.body = {person, ancestors, descendants }; //gens, gensCount
+    ctx.body = {person, ancestors, descendants }; //gens, gensCount
 }
 
 /* /ajax */

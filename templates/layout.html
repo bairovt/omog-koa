@@ -42,14 +42,14 @@
           </ul>
 
           <ul class="nav navbar-nav navbar-right">
-            <li><a href="/person" target="">Моя страница</a></li>
-            <li><a href="/logout" target="">Выйти {{username}}</a></li>
+            <li><a href="/person" target="">{{user.name}}</a></li>
+            <li><a href="/logout" target="">Выйти</a></li>
 
             <li class="dropdown">
               <a class="dropdown-toggle" data-toggle="dropdown" href="#" id="projects">Народный проект <span class="caret"></span></a>
               <ul class="dropdown-menu" aria-labelledby="projects">
                 <li><a href="http://hero.rod.so" target="_blank">Память Героям</a></li>
-                <li class="divider"></li>
+                {#<li class="divider"></li>#}
               </ul>
             </li>
           </ul>

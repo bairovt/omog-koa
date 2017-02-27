@@ -3,8 +3,9 @@ const Koa = require('koa');
 const config = require('config');
 const session = require('koa-session');
 const render = require('koa-swig');
+const co = require('co');
 const path = require('path');
-const Router = require('koa-router');
+const router = require('koa-router')();
 const koaStatic = require('koa-static');
 const logger = require('koa-logger');
 const convert = require('koa-convert'); // convert mw to koa2
@@ -15,20 +16,21 @@ app.keys = config.get('secretKeys');
 /* middle wares */
 if (app.env !== 'production') app.use(convert(koaStatic(path.join(ROOT,'public')))); // статика, кроме production
 if (app.env == 'development') app.use(convert(logger())); // логгер на деве
-app.context.render = render(config.get('swig')); // подключение шаблонизатова swig
+app.context.render = co.wrap(render(config.get('swig'))); // подключение шаблонизатова swig
 app.use(require('middleware/errors')); // обработка ошибок
 app.use(convert(session(config.get('session'), app))); // инициализация сессий
 app.use(require('koa-bodyparser')());
 /* routing */
-const router = new Router();
-router.use(require('middleware/is_authenticated')); // проверка аутентификации, обязателена для всех роутов
-router
-    .use(require('routes/main'))
-    .use('/rod', require('routes/rod'))
-    .use('/person', require('routes/person'))
-    .use('/ajax', require('routes/ajax'));
+// const router = new Router();
+app.use(require('middleware/is_authenticated')); // проверка аутентификации, обязателена для всех роутов
 
-app.use(router.routes());
+router.use('/rod', require('routes/rod'))
+		.use('/person', require('routes/person'))
+		.use('/ajax', require('routes/ajax'))
+		.use('', require('routes/main'));
+
+app.use(router.routes())
+      .use(router.allowedMethods());
 
 // start koa server
 if (module.parent) {

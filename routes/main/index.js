@@ -2,13 +2,12 @@
 
 const db = require('modules/arangodb');
 const aql = require('arangojs').aql;
-const Router = require('koa-router');
-
-const router = new Router();
+const router = require('koa-router')();
+const md5 = require('md5');
 
 /* main page */
-function* index(next) {
-	let rods = yield db.query(aql`FOR rod IN Rods
+async function index(ctx, next) {
+	let rods = await db.query(aql`FOR rod IN Rods
                                     /*FILTER rod._key == "Sharaid"*/
 												RETURN merge(rod,
 													{count: FIRST(FOR p IN Persons
@@ -16,36 +15,35 @@ function* index(next) {
 													           COLLECT WITH COUNT INTO length
 													           RETURN length)
 													})`).then(cursor => cursor.all());
-	yield this.render("main", { rods });
+	await ctx.render("main", { rods });
 }
 
-function* all(next) {
-    let cursor = yield db.query(aql`FOR p IN Persons SORT p.name RETURN p`);
-    let persons = yield cursor.all();
-    yield this.render("all", { persons });
+async function all(ctx, next) {
+    let cursor = await db.query(aql`FOR p IN Persons SORT p.name RETURN p`);
+    let persons = await cursor.all();
+    await ctx.render("all", { persons });
 }
 
-function* getLogin(next){
-    if (this.session.user) this.redirect('/person/'+this.session.user.key);
-    this.body = yield this.render('login');
+async function getLogin(ctx, next){
+    if (ctx.session.user) ctx.redirect('/person/'+ctx.session.user.key);
+    ctx.body = await ctx.render('login');
 }
 
-function* postLogin(next){
-    // yield* authenticate(login, password, this);
-    let {email, password} = this.request.body;
+async function postLogin(ctx, next){
+    // await* authenticate(login, password, this);
+    let {email, password} = ctx.request.body;
     let Persons = db.collection('Persons');
-    let person = yield Persons.firstExample({email});
-    if (person && person.password == password) {
-        this.session.user = {key: person._key, id: person._id, name: person.name, roles: person.roles};
-        this.state.username = person.name;
-        this.redirect('/'); // todo: сделать возврат на запрашиваемую страницу
+    let person = await Persons.firstExample({email});
+    if (person && person.password == md5(password)) {
+        ctx.session.user = {key: person._key, id: person._id, name: person.name, roles: person.roles};
+        ctx.redirect('/'); // todo: сделать возврат на запрашиваемую страницу
     }
-    this.redirect('/login');
+    ctx.redirect('/login');
 }
 
-function* logout(next){
-    this.session = null;
-    this.redirect('/');
+async function logout(ctx, next){
+    ctx.session = null;
+    ctx.redirect('/');
 }
 
 router

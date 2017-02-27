@@ -1,19 +1,17 @@
 'use strict';
 const db = require('modules/arangodb');
 const aql = require('arangojs').aql;
-const Router = require('koa-router');
+const router = require('koa-router')();
 const authorize =require('middleware/authorize');
 const utils = require('utils');
 const {nameProc, textProc, personKeyGen, isAdmin, getPerson} = utils;
 
-const router = new Router();
-
 /* Person page */
-function* getPersonPage(next) {
-    let key = this.params.key;
-    if (key === undefined) key = this.session.user.key; // если заход на персональную страницу юзера
+async function getPersonPage(ctx, next) {
+    let key = ctx.params.key;
+    if (key === undefined) key = ctx.session.user.key; // если заход на персональную страницу юзера
     //извлечь персону с родом и добавившим
-    let person = yield db.query(aql`
+    let person = await db.query(aql`
         FOR p IN Persons
             FILTER p._key == ${key}
             RETURN merge(p, { 
@@ -25,10 +23,10 @@ function* getPersonPage(next) {
                             RETURN {name: added.name, key: added._key})
             })`
         ).then(cursor => cursor.next());
-    if (person === undefined) this.throw(404); // check existence
+    if (person === undefined) ctx.throw(404); // check existence
 
     // находим предков персоны
-    let ancestors = yield db.query(
+    let ancestors = await db.query(
         aql`FOR v, e, p
             IN 1..100 INBOUND
             ${person._id}
@@ -38,7 +36,7 @@ function* getPersonPage(next) {
         ).then(cursor => cursor.all());
 
     // находим потомков персоны
-    let descendants = yield db.query(
+    let descendants = await db.query(
         aql`FOR v, e, p
             IN 1..100 OUTBOUND
             ${person._id}
@@ -47,29 +45,35 @@ function* getPersonPage(next) {
             RETURN {person: v, edges: p.edges}`
         ).then(cursor => cursor.all());
 
-    yield this.render("person/person", { person, ancestors, descendants }); //gens, gensCount
+    await ctx.render("person/person", { person, ancestors, descendants }); //gens, gensCount
 }
 
 const RELATION = {father: 'отца', mother: 'мать', son: 'сына', daughter: 'дочь'};
 
-function* addPersonGet(next) {
-	let {key, reltype} = this.params;
-	let person = yield getPerson(key);
-	yield this.render('person/add_person.html', {person, reltype, relation: RELATION[reltype]});
+async function addPersonGet(ctx, next) {
+	let {key, reltype} = ctx.params;
+	let person = await getPerson(key);
+	await ctx.render('person/add_person.html', {person, reltype, relation: RELATION[reltype]});
 }
 
-function* addPersonPost(next){ //key, reltype
+async function addPersonPost(ctx, next){ //key, reltype
 	// key - ключ существующего person, к которому добавляем нового person
    // reltype: "father", "mother", "son", "daughter"
 	const Persons = db.collection('Persons');
 	const Child = db.edgeCollection('child');
-	const {key, reltype} = this.params;
-	const person = yield getPerson(key);
+	const {key, reltype} = ctx.params;
+	const person = await getPerson(key);
+	const user = ctx.state.user;
+	// проверка санкций: разрешено добавлять либо к себе, либо к своим (addedBy)
+	// todo: refactor: person -> startPerson, user.id ->user._id
+	console.log(user.id);
+	console.log(person._id);
+	if (person.addedBy !== user.id && person._id !== user.id) ctx.throw(403, "Нет санкций");
 
 	// todo: Валидация формы
 	// проверка имени на спецсимволы!!! (разрешены только буквы и "-")
 	// name обязательно, surname и midname - нет
-	let {surname, name, midname, lifestory} = this.request.body;
+	let {surname, name, midname, lifestory} = ctx.request.body;
 	surname = nameProc(surname);
 	name = nameProc(name);
 	midname = nameProc(midname);
@@ -79,16 +83,16 @@ function* addPersonPost(next){ //key, reltype
 
 	let created = new Date();
 	let newPerson = {
-		_key: yield personKeyGen(fullname),
+		_key: await personKeyGen(fullname),
 	   name, surname, midname, fullname, lifestory, gender, created,
-	   addedBy: this.session.user.id  //кем добавлен
+	   addedBy: ctx.session.user.id  //кем добавлен
 	};
 	// если жен.
 	if (reltype == 'mother' || reltype == 'daughter' ) {
 	   newPerson.gender = 0;                                //изменить пол на 0
-	   newPerson.maidenName = this.request.body.maidenName; //добавить девичью фамилию
+	   newPerson.maidenName = ctx.request.body.maidenName; //добавить девичью фамилию
 	}
-	yield Persons.save(newPerson);
+	await Persons.save(newPerson);
 	// create parent edge
 	let from, to;
 	if (reltype == 'father' || reltype == 'mother' ) {
@@ -101,26 +105,26 @@ function* addPersonPost(next){ //key, reltype
 
 	let childEdge = {
 	   created,
-	   addedBy: this.session.user.id
+	   addedBy: ctx.session.user.id
 	};
-	yield Child.save(childEdge, from, to);
-	this.redirect(`/person/${key}`);
+	await Child.save(childEdge, from, to);
+	ctx.redirect(`/person/${key}`);
 }
 
-function* linkRelationGet(){
-	let {key, reltype} = this.params;
-	let person = yield getPerson(key);
-	yield this.render('person/link_relation.html', {person, reltype, relation: RELATION[reltype]});
+async function linkRelationGet(ctx, next){
+	let {key, reltype} = ctx.params;
+	let person = await getPerson(key);
+	await ctx.render('person/link_relation.html', {person, reltype, relation: RELATION[reltype]});
 }
 
-function* linkRelationPost(){
+async function linkRelationPost(ctx, next){
 
 	//todo: запрос на соединение с чужой персоной
 	//todo: запрет указания родителей, если родители уже есть
 	//todo: проверка пола
 
-	const {user} = this.session.user;
-	let {start_key, end_key, reltype} = this.request.body;
+	const user = ctx.session.user;
+	let {start_key, end_key, reltype} = ctx.request.body;
 
 	let from = start_key, to = end_key; // if reltype: 'son' or 'daughter' (child)
 	if (reltype == 'mother' || reltype == 'father') { // reverse direction (parent)
@@ -128,51 +132,47 @@ function* linkRelationPost(){
 		to = start_key;
 	}
 
-	const fromPerson = yield getPerson(from);
-	const toPerson = yield getPerson(to);
+	const fromPerson = await getPerson(from);
+	const toPerson = await getPerson(to);
 
-	if (fromPerson.addedBy != user._id && fromPerson.addedBy != user._id) this.throw(403, 'Persons to link added by different users.');
 	//todo: соединение только своих персон (кроме админа и модератора)
-
-
+	if (fromPerson.addedBy != user.id && fromPerson.addedBy != user.id) ctx.throw(403, 'Forbidden: to link Persons added by different users.');
 
 	//todo: запрет указания родителей, если родители уже есть
-
-
 
 	const Child = db.edgeCollection('child');
 	let childEdge = {
 		created: new Date(),
-		addedBy: this.session.user.id
+		addedBy: ctx.session.user.id
 	};
 	// console.log(`from: ${from}, to: ${to}, reltype: ${reltype}`);
-	yield Child.save(childEdge, fromPerson._id, toPerson._id);
-	this.redirect(`/person/${start_key}`);
+	await Child.save(childEdge, fromPerson._id, toPerson._id);
+	ctx.redirect(`/person/${start_key}`);
 }
 
 /* правильное удаление Person (вершины графа удалять вместе со связями) */
-function* removePerson(next) { // key
-    const key = this.params.key;
-    const user = this.session.user; // current user
-    /* санкции удаления персон:
-        moderator (все кроме тех, которых добавил админ)
-        manager (только тех, кого добавил сам)
-        user (только тех, кого добавил сам)
-     */
-		const personsCollection = db.collection('Persons');
-		const person = yield personsCollection.document(key); //person to remove
+async function removePerson(ctx, next) { // key
+	const key = ctx.params.key;
+	const user = ctx.session.user; // current user
+	/* санкции удаления персон:
+	  moderator (все кроме тех, которых добавил админ)
+	  manager (только тех, кого добавил сам)
+	  user (только тех, кого добавил сам)
+*/
+	const personsCollection = db.collection('Persons');
+	const person = await personsCollection.document(key); //person to remove
 
-		console.log(`person.addedBy: ${person.addedBy}, user._id: ${user.id}`);
-
-		if (person.addedBy === user.id || isAdmin(user)) {
-			// правильное удаление вершины графа
-			const childGraph = db.graph('childGraph');
-			const vertexCollection = childGraph.vertexCollection('Persons');
-			yield vertexCollection.remove(key); // todo: добавить обработку исключения неверного ключа
-			this.redirect('/all'); // todo: добавить сообщение об успешном удалении
-		} else {
-			this.throw(403, 'Forbidden');
-		}
+	console.log(`person.addedBy: ${person.addedBy}, user._id: ${user.id}`);
+//todo: рефактор
+	if (person.addedBy === user.id || isAdmin(user)) { // проверка санкций
+		// правильное удаление вершины графа
+		const childGraph = db.graph('childGraph');
+		const vertexCollection = childGraph.vertexCollection('Persons');
+		await vertexCollection.remove(key); // todo: добавить обработку исключения неверного ключа
+		ctx.redirect('/all'); // todo: добавить сообщение об успешном удалении
+	} else {
+		ctx.throw(403, 'Forbidden');
+	}
 }
 
 /* /person */
