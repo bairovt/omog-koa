@@ -4,12 +4,12 @@ const aql = require('arangojs').aql;
 const router = require('koa-router')();
 const authorize =require('middleware/authorize');
 const utils = require('utils');
-const {nameProc, textProc, personKeyGen, isAdmin, getPerson} = utils;
+const {procName, procText, personKeyGen, isAdmin, getPerson, createChildEdge} = utils;
 
 /* Person page */
 async function getPersonPage(ctx, next) {
     let key = ctx.params.key;
-    if (key === undefined) key = ctx.session.user.key; // если заход на персональную страницу юзера
+    if (key === undefined) key = ctx.session.user._key; // если заход на персональную страницу юзера
     //извлечь персону с родом и добавившим
     let person = await db.query(aql`
         FOR p IN Persons
@@ -56,28 +56,34 @@ async function addPersonGet(ctx, next) {
 	await ctx.render('person/add_person.html', {person, reltype, relation: RELATION[reltype]});
 }
 
-async function addPersonPost(ctx, next){ //key, reltype
-	// key - ключ существующего person, к которому добавляем нового person
+async function createPerson(ctx){
+
+}
+
+async function createPersonPost(ctx, next){
+
+}
+
+async function addPersonPost(ctx, next){ //startKey, reltype
+	// startKey - ключ существующего person, к которому добавляем нового person
    // reltype: "father", "mother", "son", "daughter"
 	const Persons = db.collection('Persons');
-	const Child = db.edgeCollection('child');
-	const {key, reltype} = ctx.params;
-	const person = await getPerson(key);
+	const {key: startKey, reltype} = ctx.params;
+	const startPerson = await getPerson(startKey);
 	const user = ctx.state.user;
+
 	// проверка санкций: разрешено добавлять либо к себе, либо к своим (addedBy)
-	// todo: refactor: person -> startPerson, user.id ->user._id
-	console.log(user.id);
-	console.log(person._id);
-	if (person.addedBy !== user.id && person._id !== user.id) ctx.throw(403, "Нет санкций");
+	if (startPerson.addedBy === user._id || startPerson._id === user._id) {} //continue
+	else ctx.throw(403, "Нет санкций");
 
 	// todo: Валидация формы
 	// проверка имени на спецсимволы!!! (разрешены только буквы и "-")
 	// name обязательно, surname и midname - нет
-	let {surname, name, midname, lifestory} = ctx.request.body;
-	surname = nameProc(surname);
-	name = nameProc(name);
-	midname = nameProc(midname);
-	lifestory = textProc(lifestory);
+	let {surname, name, midname, lifestory, maidenName} = ctx.request.body;
+	surname = procName(surname);
+	name = procName(name);
+	midname = procName(midname);
+	lifestory = procText(lifestory);
 	let fullname = `${surname} ${name} ${midname}`;
 	let gender = 1;
 
@@ -85,30 +91,26 @@ async function addPersonPost(ctx, next){ //key, reltype
 	let newPerson = {
 		_key: await personKeyGen(fullname),
 	   name, surname, midname, fullname, lifestory, gender, created,
-	   addedBy: ctx.session.user.id  //кем добавлен
+	   addedBy: ctx.session.user._id  //кем добавлен
 	};
 	// если жен.
 	if (reltype == 'mother' || reltype == 'daughter' ) {
 	   newPerson.gender = 0;                                //изменить пол на 0
-	   newPerson.maidenName = ctx.request.body.maidenName; //добавить девичью фамилию
+	   newPerson.maidenName = procText(maidenName); //добавить девичью фамилию
 	}
-	await Persons.save(newPerson);
+	newPerson = await Persons.save(newPerson);
 	// create parent edge
-	let from, to;
+	let fromId, toId;
 	if (reltype == 'father' || reltype == 'mother' ) {
-	   from = 'Persons/' + newPerson._key;
-	   to = 'Persons/' + key;
+	   fromId = newPerson._id;
+	   toId = startPerson._id;
 	} else if (reltype == 'son' || reltype == 'daughter' ) {
-	   from = 'Persons/' + key;
-	   to = 'Persons/' + newPerson._key;
+	   fromId = startPerson._id;
+	   toId = newPerson._id;
 	}
 
-	let childEdge = {
-	   created,
-	   addedBy: ctx.session.user.id
-	};
-	await Child.save(childEdge, from, to);
-	ctx.redirect(`/person/${key}`);
+	await createChildEdge(ctx, fromId, toId);
+	ctx.redirect(`/person/${startKey}`);
 }
 
 async function linkRelationGet(ctx, next){
@@ -126,27 +128,23 @@ async function linkRelationPost(ctx, next){
 	const user = ctx.session.user;
 	let {start_key, end_key, reltype} = ctx.request.body;
 
-	let from = start_key, to = end_key; // if reltype: 'son' or 'daughter' (child)
-	if (reltype == 'mother' || reltype == 'father') { // reverse direction (parent)
-		from = end_key;
-		to = start_key;
+	let fromKey = start_key, toKey = end_key; // if reltype: 'son' or 'daughter' (child)
+	if (reltype == 'mother' || reltype == 'father') { // if reltype is not child ('mother' or 'father'): reverse direction
+		fromKey = end_key;
+		toKey = start_key;
 	}
 
-	const fromPerson = await getPerson(from);
-	const toPerson = await getPerson(to);
+	const fromPerson = await getPerson(fromKey);
+	const toPerson = await getPerson(toKey);
 
 	//todo: соединение только своих персон (кроме админа и модератора)
-	if (fromPerson.addedBy != user.id && fromPerson.addedBy != user.id) ctx.throw(403, 'Forbidden: to link Persons added by different users.');
+	//todo: запрос на соединение персон
+	if (fromPerson.addedBy === user._id || fromPerson.addedBy === user._id) {}
+	else ctx.throw(403, 'Forbidden: to link Persons added by different users.');
 
 	//todo: запрет указания родителей, если родители уже есть
 
-	const Child = db.edgeCollection('child');
-	let childEdge = {
-		created: new Date(),
-		addedBy: ctx.session.user.id
-	};
-	// console.log(`from: ${from}, to: ${to}, reltype: ${reltype}`);
-	await Child.save(childEdge, fromPerson._id, toPerson._id);
+	await createChildEdge(ctx, fromPerson._id, toPerson._id);
 	ctx.redirect(`/person/${start_key}`);
 }
 
@@ -162,13 +160,13 @@ async function removePerson(ctx, next) { // key
 	const personsCollection = db.collection('Persons');
 	const person = await personsCollection.document(key); //person to remove
 
-	console.log(`person.addedBy: ${person.addedBy}, user._id: ${user.id}`);
+	console.log(`person.addedBy: ${person.addedBy}, user._id: ${user._id}`);
 //todo: рефактор
-	if (person.addedBy === user.id || isAdmin(user)) { // проверка санкций
+	if (person.addedBy === user._id || isAdmin(user)) { // проверка санкций
 		// правильное удаление вершины графа
 		const childGraph = db.graph('childGraph');
 		const vertexCollection = childGraph.vertexCollection('Persons');
-		await vertexCollection.remove(key); // todo: добавить обработку исключения неверного ключа
+		await vertexCollection.remove(key); // todo: test проверка несуществующего ключа
 		ctx.redirect('/all'); // todo: добавить сообщение об успешном удалении
 	} else {
 		ctx.throw(403, 'Forbidden');

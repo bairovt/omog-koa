@@ -25,7 +25,7 @@ async function all(ctx, next) {
 }
 
 async function getLogin(ctx, next){
-    if (ctx.session.user) ctx.redirect('/person/'+ctx.session.user.key);
+    if (ctx.session.user) ctx.redirect('/person/'+ctx.session.user._key);
     ctx.body = await ctx.render('login');
 }
 
@@ -35,7 +35,7 @@ async function postLogin(ctx, next){
     let Persons = db.collection('Persons');
     let person = await Persons.firstExample({email});
     if (person && person.password == md5(password)) {
-        ctx.session.user = {key: person._key, id: person._id, name: person.name, roles: person.roles};
+        ctx.session.user = {_key: person._key, _id: person._id, name: person.name, roles: person.roles};
         ctx.redirect('/'); // todo: сделать возврат на запрашиваемую страницу
     }
     ctx.redirect('/login');

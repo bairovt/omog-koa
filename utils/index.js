@@ -3,14 +3,14 @@ const translit = require('transliteration').transliterate;
 const db = require('modules/arangodb');
 const aql = require('arangojs').aql;
 
-function nameProc(name) {
+function procName(name) {
 	name = name.trim(); // убираем пробелы по краям
 	if (name === "") return "";
 	name = name[0].toUpperCase() + name.slice(1); // первая буква - большая
 	return name;
 }
 
-function textProc(text) {
+function procText(text) {
 	text = text.trim(); // убираем пробелы по краям
 	if (text === "") return "";
 	text = text[0].toUpperCase() + text.slice(1); // первая буква - большая
@@ -48,4 +48,13 @@ async function getPerson(key) {
 	return await Persons.document(key);
 }
 
-module.exports = {nameProc, textProc, personKeyGen, isAdmin, getPerson};
+async function createChildEdge(ctx, fromId, toId) {
+	const Child = db.edgeCollection('child');
+	let childEdge = {
+		created: new Date(),
+		addedBy: ctx.session.user._id
+	};
+	await Child.save(childEdge, fromId, toId);
+}
+
+module.exports = {procName, procText, personKeyGen, isAdmin, getPerson, createChildEdge};
