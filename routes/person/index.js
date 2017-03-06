@@ -204,6 +204,7 @@ async function removePerson(ctx, next) { // key
 
 	console.log(`person.addedBy: ${person.addedBy}, user._id: ${user._id}`);
 //todo: !!! подтверждение удаления
+//todo: продумать удалени персоны
 	if (person.addedBy === user._id || user.isAdmin()) { // проверка санкций
 		// правильное удаление вершины графа
 		const childGraph = db.graph('childGraph');
@@ -228,7 +229,7 @@ router
 	.get('/:key/link/:reltype', linkRelationGet)    // своя страница
 	.post('/link', linkRelationPost)    // своя страница
    // .use(allow(['manager']))
-   .get('/:key/remove', authorize(['moderator', 'manager']), removePerson);
+   .get('/:key/remove', removePerson); //authorize(['moderator', 'manager'])
     
 
 module.exports = router.routes();
