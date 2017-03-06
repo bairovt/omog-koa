@@ -15,7 +15,14 @@
 		{% if reltype == 'mother' or reltype == 'daughter'%}
 			<p><input type="text" size="40" name="maidenName" placeholder="Девичья фамилия"></p>
 		{% endif %}
-
+		<p><label for="rod">Род</label>
+			<select name="rod" id="rod">
+				<option value="" selected></option>
+				{% for rod in rods %}
+					<option value="{{rod._id}}">{{rod.name}}</option>
+				{% endfor %}
+			</select>
+		</p>
 	  <textarea name="lifestory" placeholder="Биография" cols="40" rows="5"></textarea>
 		<br/>
 	  <button type="submit">Добавить {{relation}}</button>

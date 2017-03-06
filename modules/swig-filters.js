@@ -18,7 +18,7 @@ function ancestorRelation(a){
 		if (a.person.gender == 1) return "прадед";
 		else if (a.person.gender == 0) return "прабабушка";
 	} else {
-		return "колено " + a.edges.length;
+		return a.edges.length + "-е " + "колено";
 	}
 }
 
@@ -33,7 +33,7 @@ function descendantRelation(d){
 		if (d.person.gender == 1) return "правнук";
 		else if (d.person.gender == 0) return "правнучка";
 	} else {
-		return "колено " + d.edges.length;
+		return d.edges.length + "-е " + "колено";
 	}
 }
 

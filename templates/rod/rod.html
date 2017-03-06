@@ -7,7 +7,7 @@
 <h3>{{rod.about}}</h3>
 <div>
 	{% for person in persons %}
-	<a href="/person/{{person._key}}">{{ person.fullname }}</a> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	<a href="/person/{{person._key}}">{{person.surname}} {{person.name}} {{person.midname}}</a> <br/>
 	{% endfor %}
 </div>
 {% endblock %}

@@ -20,10 +20,11 @@ app.context.render = co.wrap(render(config.get('swig'))); // подключен�
 app.use(require('middleware/errors')); // обработка ошибок
 app.use(convert(session(config.get('session'), app))); // инициализация сессий
 app.use(require('koa-bodyparser')());
-/* routing */
-// const router = new Router();
-app.use(require('middleware/is_authenticated')); // проверка аутентификации, обязателена для всех роутов
 
+app.use(require('middleware/is_authenticated')); // проверка аутентификации, обязателена для всех роутов
+app.use(require('middleware/set_state')); // set state of the request
+
+/* routing */
 router.use('/rod', require('routes/rod'))
 		.use('/person', require('routes/person'))
 		.use('/ajax', require('routes/ajax'))

@@ -4,6 +4,7 @@ const db = require('modules/arangodb');
 const aql = require('arangojs').aql;
 
 function procName(name) {
+	// todo:
 	name = name.trim(); // убираем пробелы по краям
 	if (name === "") return "";
 	name = name[0].toUpperCase() + name.slice(1); // первая буква - большая
@@ -17,9 +18,10 @@ function procText(text) {
 	return text;
 }
 
-async function personKeyGen(fullname) {
+async function personKeyGen(surname, name , midname) {
+	let fullname = surname+name+midname;
 	// транслитерация todo: проверить работу транслита с иностр. язык (монгольский, бурядский, китайский)
-	let key = translit(fullname.replace(/\s/g, "")); // удалить все пробелы,
+	let key = translit(fullname.replace(/\s/g, "")); // удалить все возможные пробелы в имени,
 	// найти все совпадения в коллекции
 	let matches = await db.query(aql`FOR p IN Persons
 		FILTER p._key LIKE ${key+'%'}	     
@@ -32,15 +34,15 @@ async function personKeyGen(fullname) {
 	return `${key}${maxNum+1}`; // new key
 }
 
-function isAdmin(user){
-	//todo: доделать или удалить
-	/* Check if user is admin */
-	return user.roles.indexOf('admin') != -1; // true or false
+function isAdmin(){
+	/* Checks if user is admin: user.isAdmin() */
+	return this.roles.indexOf('admin') != -1; // true or false
 }
 
-function hasRole(user){
+function hasRole(){
+	// todo: доделать или удалить
 	/* Check if user is admin */
-	return user.roles.indexOf('admin') != -1; // true or false
+	return this.roles.indexOf('admin') != -1; // true or false
 }
 
 async function getPerson(key) {
