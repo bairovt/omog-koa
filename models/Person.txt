@@ -9,7 +9,10 @@
 	rod: "Rods/Sharaid", // Род "Шарайд"
 	addedBy: "Persons/BairovTumenG",
 	created: "2016-12-03T12:35:03.039Z", // дата и время создания документа
-	roles: ["manager", "admin"]
+	roles: [
+	    "manager",
+	    "admin"
+	]
 	email: "bairovt@gmail.com",
 	password: "md5hash",
 	lifestory: "биография",

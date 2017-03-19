@@ -98,7 +98,7 @@
 
 		let xhr = new XMLHttpRequest();
 		window.onload = function () {
-		    xhr.open("GET", "/ajax/get_anc_des/{{person._key}}", true);
+		    xhr.open("GET", "/api/get-anc-des/{{person._key}}", true);
 		    xhr.send();
             xhr.onreadystatechange = function() {
                 if (xhr.readyState != 4) return;

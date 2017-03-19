@@ -16,8 +16,8 @@ module.exports = async function (ctx, next) {
         else {
             ctx.status = 500;
             ctx.body = "Ошибка на сервере. Отправлено уведомление администратору";
-            // console.error(err.message, err.stack);
-            console.error(err.name, err.message, err);
+            console.error(err.message, err.stack);
+            // console.error(err.name, err.message, err);
         }
     }
 };

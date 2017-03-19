@@ -42,9 +42,9 @@
           </ul>
 
           <ul class="nav navbar-nav navbar-right">
-	          {# if user.isAdmin() #}
+	          {% if user.isAdmin() || user.hasRole('manager') %}
               <li><a href="/person/create" target="">Создать</a></li>
-	          {# endif #}
+	          {% endif %}
             <li><a href="/person" target="">{{user.name}}</a></li>
             <li><a href="/logout" target="">Выйти</a></li>
 

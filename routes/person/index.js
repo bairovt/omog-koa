@@ -10,7 +10,7 @@ const {procName, procText, personKeyGen, getPerson, createChildEdge} = utils;
 /* Person page */
 async function getPersonPage(ctx, next) {
     let key = ctx.params.key;
-    if (key === undefined) key = ctx.session.user._key; // если заход на персональную страницу юзера
+    if (key === undefined) key = ctx.state.user._key; // если заход на персональную страницу юзера
     //извлечь персону с родом и добавившим
     let person = await db.query(aql`
         FOR p IN Persons
@@ -67,7 +67,7 @@ async function createPerson(ctx, reltype=null){ //helper function
 		name, surname, midname, lifestory, rod,
 		gender: +gender, // 0 or 1
 		created: new Date(),
-		addedBy: ctx.session.user._id  //кем добавлен,
+		addedBy: ctx.state.user._id  //кем добавлен,
 	};
 	// если жен.
 	if (reltype == 'mother' || reltype == 'daughter' ) newPerson.gender = 0; //изменить пол на 0
@@ -205,7 +205,8 @@ async function removePerson(ctx, next) { // key
 	console.log(`person.addedBy: ${person.addedBy}, user._id: ${user._id}`);
 //todo: !!! подтверждение удаления
 //todo: продумать удалени персоны
-	if (person.addedBy === user._id || user.isAdmin()) { // проверка санкций
+//todo: запрет удаления персоны самой себя
+	if (person.addedBy === user._id || user.isAdmin() || user.hasRoles(['moderator'])) { // проверка санкций
 		// правильное удаление вершины графа
 		const childGraph = db.graph('childGraph');
 		const vertexCollection = childGraph.vertexCollection('Persons');
@@ -219,9 +220,12 @@ async function removePerson(ctx, next) { // key
 /* /person */
 router
    .get('/', getPersonPage)    // своя страница
-   .get('/create', authorize(['admin']), createPersonGet)    // страница создания персоны
-   .post('/create', authorize(['admin']), createPersonPost)    // создание персоны
+
+   .get('/create', authorize(['manager']), createPersonGet)    // страница создания персоны
+   .post('/create', authorize(['manager']), createPersonPost)    // создание персоны
+
    .get('/:key', getPersonPage)    // страница персоны
+
    .get('/:key/add/:reltype', addPersonGet)   // страница добавления персоны
    .post('/:key/add/:reltype', addPersonPost)    // обработка добавления персоны
 	// .get('/:key/edit', editPersonGet)   // страница изменения персоны

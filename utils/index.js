@@ -4,7 +4,6 @@ const db = require('modules/arangodb');
 const aql = require('arangojs').aql;
 
 function procName(name) {
-	// todo:
 	name = name.trim(); // убираем пробелы по краям
 	if (name === "") return "";
 	name = name[0].toUpperCase() + name.slice(1); // первая буква - большая
@@ -34,17 +33,6 @@ async function personKeyGen(surname, name , midname) {
 	return `${key}${maxNum+1}`; // new key
 }
 
-function isAdmin(){
-	/* Checks if user is admin: user.isAdmin() */
-	return this.roles.indexOf('admin') != -1; // true or false
-}
-
-function hasRole(){
-	// todo: доделать или удалить
-	/* Check if user is admin */
-	return this.roles.indexOf('admin') != -1; // true or false
-}
-
 async function getPerson(key) {
 	let Persons = db.collection('Persons');
 	return await Persons.document(key);
@@ -54,9 +42,9 @@ async function createChildEdge(ctx, fromId, toId) {
 	const Child = db.edgeCollection('child');
 	let childEdge = {
 		created: new Date(),
-		addedBy: ctx.session.user._id
+		addedBy: ctx.state.user._id
 	};
 	await Child.save(childEdge, fromId, toId);
 }
 
-module.exports = {procName, procText, personKeyGen, isAdmin, getPerson, createChildEdge};
+module.exports = {procName, procText, personKeyGen, getPerson, createChildEdge};

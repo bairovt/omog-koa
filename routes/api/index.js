@@ -3,13 +3,12 @@ const db = require('modules/arangodb');
 const aql = require('arangojs').aql;
 const Router = require('koa-router');
 // const authorize =require('middleware/authorize');
-const utils = require('utils');
-const {nameProc, procText, personKeyGen} = utils;
+// const utils = require('utils');
 
 const router = new Router();
 
 /* Person page */
-async function get_anc_des(ctx, next) {
+async function getAncDes(ctx, next) {
     let {person_key} = ctx.params;
     // let person_id = "Persons/" + person_key;
 
@@ -53,9 +52,8 @@ async function get_anc_des(ctx, next) {
     ctx.body = {person, ancestors, descendants }; //gens, gensCount
 }
 
-/* /ajax */
 router    
-    .get('/get_anc_des/:person_key', get_anc_des);    // страница человека
+      .get('/get-anc-des/:person_key', getAncDes);    // страница человека
     //.use(authorize(['admin', 'manager']))
     // .get('/:key/add/:rel', addPerson)   // страница добавления человека
     // .post('/:key/add/:rel', addPerson)    // обработка добавления человека

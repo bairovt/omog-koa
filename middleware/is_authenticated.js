@@ -2,6 +2,6 @@
 
 module.exports = async function (ctx, next){
 	/* authentication is required for all routes */
-	if (ctx.session.user || ctx.request.url === '/login') await next();
+	if (ctx.session.user_key || ctx.request.url === '/login') await next();
 	else return ctx.redirect('/login');
 };
