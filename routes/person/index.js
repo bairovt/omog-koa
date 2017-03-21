@@ -7,6 +7,13 @@ const utils = require('utils');
 const md5 = require('md5');
 const {procName, procText, personKeyGen, getPerson, createChildEdge} = utils;
 
+/* All persons page */
+async function getAllPersonsPage(ctx, next) {
+  let cursor = await db.query(aql`FOR p IN Persons SORT p.name RETURN p`);
+  let persons = await cursor.all();
+  await ctx.render("person/all_persons", { persons });
+}
+
 /* Person page */
 async function getPersonPage(ctx, next) {
     let key = ctx.params.key;
@@ -211,7 +218,7 @@ async function removePerson(ctx, next) { // key
 		const childGraph = db.graph('childGraph');
 		const vertexCollection = childGraph.vertexCollection('Persons');
 		await vertexCollection.remove(key); // todo: test проверка несуществующего ключа
-		ctx.redirect('/all'); // todo: добавить сообщение об успешном удалении
+		ctx.redirect('/person/all'); // todo: добавить сообщение об успешном удалении
 	} else {
 		ctx.throw(403, 'Forbidden');
 	}
@@ -220,6 +227,7 @@ async function removePerson(ctx, next) { // key
 /* /person */
 router
    .get('/', getPersonPage)    // своя страница
+   .get('/all', getAllPersonsPage)    // своя страница
 
    .get('/create', authorize(['manager']), createPersonGet)    // страница создания персоны
    .post('/create', authorize(['manager']), createPersonPost)    // создание персоны

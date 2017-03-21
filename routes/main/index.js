@@ -5,25 +5,6 @@ const aql = require('arangojs').aql;
 const router = require('koa-router')();
 const md5 = require('md5');
 
-/* main page */
-async function index(ctx, next) {
-	let rods = await db.query(aql`FOR rod IN Rods
-                                    /*FILTER rod._key == "Sharaid"*/
-												RETURN merge(rod,
-													{count: FIRST(FOR p IN Persons
-													           FILTER p.rod == rod._id
-													           COLLECT WITH COUNT INTO length
-													           RETURN length)
-													})`).then(cursor => cursor.all());
-	await ctx.render("main", { rods });
-}
-
-async function all(ctx, next) {
-    let cursor = await db.query(aql`FOR p IN Persons SORT p.name RETURN p`);
-    let persons = await cursor.all();
-    await ctx.render("all", { persons });
-}
-
 async function getLogin(ctx, next){
     if (ctx.session.user_key) ctx.redirect('/person/'+ctx.session.user_key);
     ctx.body = await ctx.render('login');
@@ -48,10 +29,8 @@ async function logout(ctx, next){
 }
 
 router
-    .get('/', index)
     .get('/login', getLogin)
     .post('/login', postLogin)
-    .get('/logout', logout)
-    .get('/all', all);
+    .get('/logout', logout);
 
 module.exports = router.routes();

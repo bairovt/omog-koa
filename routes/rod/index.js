@@ -15,6 +15,21 @@ async function rod(ctx, next) { //key
 	await ctx.render("rod/rod", { rod, persons });
 }
 
-router.get('/:key', rod);    // страница рода
+async function getAllRods(ctx, next) {
+  let rods = await db.query(aql`FOR rod IN Rods
+                                    /*FILTER rod._key == "Sharaid"*/
+												RETURN merge(rod,
+													{count: FIRST(FOR p IN Persons
+													           FILTER p.rod == rod._id
+													           COLLECT WITH COUNT INTO length
+													           RETURN length)
+													})`).then(cursor => cursor.all());
+  await ctx.render("rod/all_rods", { rods });
+}
+
+router
+    .get('/all', getAllRods) // страница все рода
+		.get('/:key', rod);    // страница рода
+
 
 module.exports=router.routes();

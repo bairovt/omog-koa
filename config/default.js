@@ -25,5 +25,6 @@ module.exports = {
         ext: 'html',
         filters
         // locals: locals
-    }
+    },
+    env: 'development'
 };

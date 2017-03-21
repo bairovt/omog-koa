@@ -2,8 +2,6 @@
 const db = require('modules/arangodb');
 const aql = require('arangojs').aql;
 const Router = require('koa-router');
-// const authorize =require('middleware/authorize');
-// const utils = require('utils');
 
 const router = new Router();
 
