@@ -15,8 +15,8 @@ async function getAllRods(ctx, next) {
 													           RETURN length)
 													})`).then(cursor => cursor.all());
   // await ctx.render("rod/all_rods", { rods });
-
-  ctx.set('Access-Control-Allow-Origin', '*');
+//todo: проверить безопасность
+//   ctx.set('Access-Control-Allow-Origin', 'http://localhost:8080');
   ctx.body = {rods};
 }
 

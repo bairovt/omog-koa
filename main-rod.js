@@ -8,12 +8,15 @@ const path = require('path');
 const Router = require('koa-router');
 const koaStatic = require('koa-static');
 const logger = require('koa-logger');
-const convert = require('koa-convert'); // convert mw to koa2
+const convert = require('koa-convert');
 const ROOT = config.get('root');
+// const cors = require('kcors');
+const cors = require('middleware/cors');
 
 const app = new Koa();
 app.keys = config.get('secretKeys');
 /* middle wares */
+if (app.env === 'development') app.use(cors); // use cors to allow requests from localhost:8080 in development
 if (app.env !== 'production') app.use(convert(koaStatic(path.join(ROOT,'public')))); // статика, кроме production
 if (app.env === 'development') app.use(convert(logger())); // логгер на деве
 app.context.render = co.wrap(render(config.get('swig'))); // подключение шаблонизатора swig
@@ -24,8 +27,7 @@ app.use(require('koa-bodyparser')());
 /* free api routes */
 const freeApiRouter = new Router();
 freeApiRouter.use('/free-api', require('routes/free-api'));
-app.use(freeApiRouter.routes())
-		.use(freeApiRouter.allowedMethods());
+app.use(freeApiRouter.routes());
 
 /* authentication middleware */
 app.use(require('middleware/is_authenticated')); // проверка аутентификации, обязателена для всех роутов
@@ -34,8 +36,10 @@ app.use(require('middleware/set-state.js')); // set state of the request
 /* api routing */
 const apiRouter = new Router();
 apiRouter
-    .use('/api', require('routes/api/person'))
-    .use('/api', require('routes/api/rod'));
+    .use('/api/sign', require('routes/api/sign'))
+    .use('/api/rod', require('routes/api/rod'))
+    .use('/api', require('routes/api/person'));
+
 app.use(apiRouter.routes())
     .use(apiRouter.allowedMethods());
 
@@ -44,10 +48,9 @@ const router = new Router();
 router.get('/', async function (ctx, next) {ctx.redirect('/rod/all');})
     .use('/rod', require('routes/rod'))
 		.use('/person', require('routes/person'))
-		.use('', require('routes/main'));
+		.use('/sign', require('routes/sign'));
 
-app.use(router.routes())
-      .use(router.allowedMethods());
+app.use(router.routes());
 
 // /* api routing */
 // const apiRouter = new Router();

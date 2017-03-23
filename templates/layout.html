@@ -20,6 +20,7 @@
       <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
     <![endif]-->
 	  <script src="https://unpkg.com/vue"></script>
+	  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
   </head>
   <body>
     <div class="navbar navbar-inverse navbar-default navbar-fixed-top">
@@ -47,7 +48,7 @@
               <li><a href="/person/create" target="">Создать</a></li>
 	          {% endif %}
             <li><a href="/person" target="">{{user.name}}</a></li>
-            <li><a href="/logout" target="">Выйти</a></li>
+            <li><a href="/sign/out" target="">Выйти</a></li>
 
             <li class="dropdown">
               <a class="dropdown-toggle" data-toggle="dropdown" href="#" id="projects">Народный проект <span class="caret"></span></a>

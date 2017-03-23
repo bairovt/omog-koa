@@ -54,6 +54,7 @@ async function getPersonPage(ctx, next) {
         ).then(cursor => cursor.all());
 
     await ctx.render("person/person", { person, ancestors, descendants }); //gens, gensCount
+    // await ctx.render("person/person", {person_key: person._key}); //gens, gensCount
 }
 
 const RELATION = {father: 'отца', mother: 'мать', son: 'сына', daughter: 'дочь'};

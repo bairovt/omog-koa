@@ -5,13 +5,12 @@ const aql = require('arangojs').aql;
 const router = require('koa-router')();
 const md5 = require('md5');
 
-async function getLogin(ctx, next){
+async function getSignIn(ctx, next){
     if (ctx.session.user_key) ctx.redirect('/person/'+ctx.session.user_key);
-    ctx.body = await ctx.render('login');
+    ctx.body = await ctx.render('signin');
 }
 
-async function postLogin(ctx, next){
-    // await* authenticate(login, password, this);
+async function postSignIn(ctx, next){
     let {email, password} = ctx.request.body;
     let persons = db.collection('Persons');
     let person = await persons.firstExample({email});
@@ -20,17 +19,17 @@ async function postLogin(ctx, next){
         ctx.session.user_key = person._key;
         ctx.redirect('/'); // todo: сделать возврат на запрашиваемую страницу
     }
-    ctx.redirect('/login');
+    ctx.redirect('/sign/in');
 }
 
-async function logout(ctx, next){
+async function signOut(ctx, next){
     ctx.session = null;
-    ctx.redirect('/');
+    ctx.redirect('/sign/in');
 }
 
 router
-    .get('/login', getLogin)
-    .post('/login', postLogin)
-    .get('/logout', logout);
+    .get('/in', getSignIn)
+    .post('/in', postSignIn)
+    .get('/out', signOut);
 
 module.exports = router.routes();
