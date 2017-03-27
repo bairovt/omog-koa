@@ -10,7 +10,6 @@ const koaStatic = require('koa-static');
 const logger = require('koa-logger');
 const convert = require('koa-convert');
 const ROOT = config.get('root');
-// const cors = require('kcors');
 const cors = require('middleware/cors');
 
 const app = new Koa();
@@ -38,29 +37,23 @@ const apiRouter = new Router();
 apiRouter
     .use('/api/sign', require('routes/api/sign'))
     .use('/api/rod', require('routes/api/rod'))
-    .use('/api', require('routes/api/person'));
-
-app.use(apiRouter.routes())
-    .use(apiRouter.allowedMethods());
+    .use('/api/person', require('routes/api/person'));
+app.use(apiRouter.routes());
+    // .use(apiRouter.allowedMethods());
 
 /* main routing */
 const router = new Router();
-router.get('/', async function (ctx, next) {ctx.redirect('/rod/all');})
+router
     .use('/rod', require('routes/rod'))
-		.use('/person', require('routes/person'))
-		.use('/sign', require('routes/sign'));
-
+    .use('/person', require('routes/person'))
+    .use('/sign', require('routes/sign'))
+    // .get('/sign/in', async function (ctx, next) {return console.log('тут sign')})
+    .get('/', async function (ctx, next) {ctx.redirect('/rod/all');});
 app.use(router.routes());
+      // .use(apiRouter.allowedMethods());
 
-// /* api routing */
-// const apiRouter = new Router();
-// apiRouter
-// 		.use('/api', require('routes/api/person'))
-// 		.use('/api', require('routes/api/rod'));
-// app.use(apiRouter.routes())
-//       .use(apiRouter.allowedMethods());
 
-// start koa server
+/* start koa server */
 if (module.parent) {
     module.exports = app;
 } else {

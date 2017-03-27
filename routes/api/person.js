@@ -5,6 +5,13 @@ const Router = require('koa-router');
 
 const router = new Router();
 
+/* All persons page */
+async function getAllPersons(ctx, next) {
+  let persons = await db.query(aql`FOR p IN Persons SORT p.surname RETURN p`)
+                        .then(cursor => {return cursor.all()});
+  ctx.body = {persons};
+}
+
 /* Person page */
 async function getAncDes(ctx, next) {
     let {person_key} = ctx.params;
@@ -17,10 +24,10 @@ async function getAncDes(ctx, next) {
 		      RETURN merge(p, { 
 		          rod: FIRST(FOR rod IN Rods            
 		                  FILTER p.rod == rod._id
-		                  RETURN {name: rod.name, key: rod._key}),
+		                  RETURN {name: rod.name, _key: rod._key}),
 		          addedBy: FIRST(FOR added IN Persons
 		                      FILTER added._id == p.addedBy
-		                      RETURN {name: added.name, key: added._key})
+		                      RETURN {name: added.name, surname: added.surname, _key: added._key})
 		      })`
     ).then(cursor => cursor.next());
 
@@ -50,8 +57,9 @@ async function getAncDes(ctx, next) {
     ctx.body = {person, ancestors, descendants }; //gens, gensCount
 }
 
-router    
-      .get('/get-anc-des/:person_key', getAncDes);    // страница человека
+router
+    .get('/all', getAllPersons)
+    .get('/:person_key/get-anc-des', getAncDes);    // страница человека
     //.use(authorize(['admin', 'manager']))
     // .get('/:key/add/:rel', addPerson)   // страница добавления человека
     // .post('/:key/add/:rel', addPerson)    // обработка добавления человека

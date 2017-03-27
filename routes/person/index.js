@@ -78,7 +78,7 @@ async function createPerson(ctx, reltype=null){ //helper function
 		addedBy: ctx.state.user._id  //кем добавлен,
 	};
 	// если жен.
-	if (reltype == 'mother' || reltype == 'daughter' ) newPerson.gender = 0; //изменить пол на 0
+	if (reltype === 'mother' || reltype === 'daughter' ) newPerson.gender = 0; //изменить пол на 0
 	if (newPerson.gender === 0) newPerson.maidenName = procText(maidenName); //присвоить девичью фамилию
 
 	if (email && password) {
@@ -123,7 +123,7 @@ async function addPersonPost(ctx, next){
 
 	// create parent edge
 	let fromId, toId;
-	if (reltype == 'father' || reltype == 'mother' ) {
+	if (reltype === 'father' || reltype === 'mother' ) {
 	   fromId = newPerson._id;
 	   toId = startPerson._id;
 	} else if (reltype == 'son' || reltype == 'daughter' ) {
@@ -179,7 +179,7 @@ async function linkRelationPost(ctx, next){
 	let {start_key, end_key, reltype} = ctx.request.body;
 
 	let fromKey = start_key, toKey = end_key; // if reltype: 'son' or 'daughter' (child)
-	if (reltype == 'mother' || reltype == 'father') { // if reltype is not child ('mother' or 'father'): reverse direction
+	if (reltype === 'mother' || reltype === 'father') { // if reltype is not child ('mother' or 'father'): reverse direction
 		fromKey = end_key;
 		toKey = start_key;
 	}
@@ -239,8 +239,8 @@ router
    .post('/:key/add/:reltype', addPersonPost)    // обработка добавления персоны
 	// .get('/:key/edit', editPersonGet)   // страница изменения персоны
 	// .post('/:key/edit', editPersonPost)    // обработка изменения персоны
-	.get('/:key/link/:reltype', linkRelationGet)    // своя страница
-	.post('/link', linkRelationPost)    // своя страница
+   .get('/:key/link/:reltype', linkRelationGet)    // своя страница
+   .post('/link', linkRelationPost)    // своя страница
    // .use(allow(['manager']))
    .get('/:key/remove', removePerson); //authorize(['moderator', 'manager'])
     

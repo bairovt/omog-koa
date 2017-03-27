@@ -11,7 +11,7 @@ async function signIn(ctx, next){
     let person = await persons.firstExample({email});
     if (person && person.password === md5(password)) {
       ctx.session.user_key = person._key;
-      ctx.body = {location:'/#'};
+      ctx.body = {location:'/#/rods'};
       // todo: сделать возврат на запрашиваемую страницу
     } else {
       ctx.status = 401;

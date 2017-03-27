@@ -5,7 +5,7 @@ const Router = require('koa-router');
 
 const router = new Router();
 
-async function getAllRods(ctx, next) {
+async function allRods(ctx, next) {
   let rods = await db.query(aql`FOR rod IN Rods
                                     /*FILTER rod._key == "Sharaid"*/
 												RETURN merge(rod,
@@ -14,18 +14,22 @@ async function getAllRods(ctx, next) {
 													           COLLECT WITH COUNT INTO length
 													           RETURN length)
 													})`).then(cursor => cursor.all());
-  // await ctx.render("rod/all_rods", { rods });
 //todo: проверить безопасность
-//   ctx.set('Access-Control-Allow-Origin', 'http://localhost:8080');
   ctx.body = {rods};
 }
 
-router    
-    .get('/get-all-rods', getAllRods);    // страница человека
-    //.use(authorize(['admin', 'manager']))
-    // .get('/:key/add/:rel', addPerson)   // страница добавления человека
-    // .post('/:key/add/:rel', addPerson)    // обработка добавления человека
-    // .get('/:key/remove', removePerson);
+async function rodPersons(ctx, next) { //key
+  let Rods = db.collection('Rods');
+  let key = ctx.params.key;
+  let rod = await Rods.document(key);
+  let persons = await db.query(aql`FOR p IN Persons
+	                                      FILTER p.rod == ${'Rods/'+key}
+	                                      RETURN p`).then(cursor => cursor.all());
+  ctx.body = { rod, persons };
+}
 
+router    
+    .get('/all', allRods)    // страница: все рода
+    .get('/:key/persons', rodPersons);    // страница: все персоны рода
 
 module.exports = router.routes();

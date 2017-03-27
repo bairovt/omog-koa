@@ -98,7 +98,7 @@
 
 		let xhr = new XMLHttpRequest();
 		window.onload = function () {
-		    xhr.open("GET", "/api/get-anc-des/{{person._key}}", true);
+		    xhr.open("GET", "/api/person/{{person._key}}/get-anc-des", true);
 		    xhr.send();
             xhr.onreadystatechange = function() {
                 if (xhr.readyState != 4) return;
@@ -112,12 +112,12 @@
                     r.ancestors.map(i => {
                         net_data.nodes.push({id: i.person._id, label: `${i.person.surname} ${i.person.name}`});
                         net_data.edges.push({from: i.edge._from, to: i.edge._to});
-					});
+										});
 
                     r.descendants.map(i => {
                         net_data.nodes.push({id: i.person._id, label: `${i.person.surname} ${i.person.name}`});
                         net_data.edges.push({from: i.edge._from, to: i.edge._to});
-					});
+										});
                     // initialize your network!
                     let network = new vis.Network(container, net_data, options);
                 }
