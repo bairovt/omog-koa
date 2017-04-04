@@ -4,33 +4,44 @@ const db = require('modules/arangodb');
 const aql = require('arangojs').aql;
 
 function procName(name) {
+  // todo: проработать угрозу aql-инъекций
 	name = name.trim(); // убираем пробелы по краям
+  if(name.length > 150) throw {status: 400, message: 'Name is too long'};
 	if (name === "") return "";
 	name = name[0].toUpperCase() + name.slice(1); // первая буква - большая
 	return name;
 }
 
 function procText(text) {
+  // todo: проработать угрозу aql-инъекций
 	text = text.trim(); // убираем пробелы по краям
+  if(text.length > 15000) throw {status: 400, message: 'Text is too long'};
 	if (text === "") return "";
 	text = text[0].toUpperCase() + text.slice(1); // первая буква - большая
 	return text;
 }
 
 async function personKeyGen(surname, name , midname) {
-	let fullname = surname+name+midname;
-	// транслитерация todo: проверить работу транслита с иностр. язык (монгольский, бурядский, китайский)
-	let key = translit(fullname.replace(/\s/g, "")); // удалить все возможные пробелы в имени,
-	// найти все совпадения в коллекции
-	let matches = await db.query(aql`FOR p IN Persons
-		FILTER p._key LIKE ${key+'%'}	     
+	/* Не испльзуется, т.к. было решено использовать автогенерируемые ключи */
+  let fullname = surname + '_' + name + '_' + midname;
+  let key = fullname.replace(/\s+/g, "_"); // заменить пробелы на _,
+  // транслитерация todo: проверить работу транслита с иностр. язык (монгольский, бурядский, китайский)
+  key = translit(key);
+  key = key.toLowerCase();
+  // найти все совпадения в коллекции
+  let pattern = "^" + key + "\\d*$";
+  let matches = await db.query(aql`FOR p IN Persons		
+		FILTER REGEX_TEST(p._key, ${pattern}, true) == true
 		RETURN p._key`).then(cursor => cursor.all());
-	// возврат ключа, если ключ не повторяется
-	if (matches.length == 0) return key;
-	/* если такой ключ уже есть, конкатенирум инрементный индекс */
-	let indexes = matches.map(_key => +_key.split(key).pop()); // извлекаем индексы: SurnameNameM123 => 123
-	let maxNum = Math.max(...indexes);
-	return `${key}${maxNum+1}`; // new key
+  if (matches.length === 0) {	// возврат ключа, если ключ не повторяется
+    return key;
+  } else {	/* если такой ключ уже есть, конкатенирум инрементный индекс */
+    let indexes = matches.map(_key => +( _key.toLowerCase().split(key).pop()) ); // извлекаем все индексы: surname_nameM123 => 123
+    let maxNum = Math.max(...indexes); // выбираем максимальный
+    let newIndex = maxNum+1; //новый индекс больше на 1
+    if(isNaN(newIndex)) throw new Error("personKeyGen: NaN error"); // кинуть исключение если ошибка NaN
+    return key+(newIndex); // new key
+  }
 }
 
 async function getPerson(key) {

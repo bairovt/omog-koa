@@ -5,7 +5,7 @@ const router = require('koa-router')();
 const authorize =require('middleware/authorize');
 const utils = require('utils');
 const md5 = require('md5');
-const {procName, procText, personKeyGen, getPerson, createChildEdge} = utils;
+const {procName, procText, getPerson, createChildEdge} = utils;
 
 /* All persons page */
 async function getAllPersonsPage(ctx, next) {
@@ -71,7 +71,7 @@ async function createPerson(ctx, reltype=null){ //helper function
 	lifestory = procText(lifestory);
 
 	let newPerson = {
-		_key: await personKeyGen(surname, name, midname),
+		// _key: await personKeyGen(surname, name, midname),
 		name, surname, midname, lifestory, rod,
 		gender: +gender, // 0 or 1
 		created: new Date(),
@@ -108,7 +108,7 @@ async function addPersonGet(ctx, next) {
 	await ctx.render('person/add_person.html', {person, reltype, relation: RELATION[reltype], rods});
 }
 
-async function addPersonPost(ctx, next){
+async function addPerson(ctx, next){
 	/* startKey, reltype
 		key, startKey - ключ существующего person, к которому добавляем нового person
       reltype: "father", "mother", "son", "daughter" */
@@ -236,7 +236,7 @@ router
    .get('/:key', getPersonPage)    // страница персоны
 
    .get('/:key/add/:reltype', addPersonGet)   // страница добавления персоны
-   .post('/:key/add/:reltype', addPersonPost)    // обработка добавления персоны
+   .post('/:key/add/:reltype', addPerson)    // обработка добавления персоны
 	// .get('/:key/edit', editPersonGet)   // страница изменения персоны
 	// .post('/:key/edit', editPersonPost)    // обработка изменения персоны
    .get('/:key/link/:reltype', linkRelationGet)    // своя страница
