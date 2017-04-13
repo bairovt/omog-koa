@@ -6,14 +6,13 @@ const Router = require('koa-router');
 const router = new Router();
 
 async function allRods(ctx, next) {
-  let rods = await db.query(aql`FOR rod IN Rods
-                                    /*FILTER rod._key == "Sharaid"*/
-												RETURN merge(rod,
-													{count: FIRST(FOR p IN Persons
-													           FILTER p.rod == rod._id
-													           COLLECT WITH COUNT INTO length
-													           RETURN length)
-													})`).then(cursor => cursor.all());
+  let rods = await db.query(aql`FOR rod IN Rods                                    
+                                RETURN merge(rod,
+                                  {count: FIRST(FOR p IN Persons
+                                             FILTER p.rod == rod._id
+                                             COLLECT WITH COUNT INTO length
+                                             RETURN length)
+                                  })`).then(cursor => cursor.all());
 //todo: проверить безопасность
   ctx.body = {rods};
 }

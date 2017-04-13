@@ -3,9 +3,8 @@ const db = require('modules/arangodb');
 const aql = require('arangojs').aql;
 const router = require('koa-router')();
 const authorize =require('middleware/authorize');
-const utils = require('utils');
 const md5 = require('md5');
-const {procName, procText, getPerson, createChildEdge} = utils;
+const {procName, procText, getPerson, createChildEdge} = require('utils');
 
 /* All persons page */
 async function getAllPersonsPage(ctx, next) {

@@ -1,11 +1,11 @@
 'use strict';
 
  module.exports = class User {
-	constructor(user){
-		this._key = user._key;
-		this._id = user._id;
-		this.name = user.name;
-		this.roles = user.roles || [];
+	constructor(person){
+		this._key = person._key;
+		this._id = person._id;
+		this.name = person.name;
+		this.roles = person.user.roles || [];
 	}
 
 	isAdmin(){
