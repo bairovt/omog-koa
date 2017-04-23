@@ -7,22 +7,19 @@
 module.exports = function (allowedRoles){
 	return async function (ctx, next) {
 		let authorized = false;
-		let user = ctx.state.user;
-
-		if (!user.roles) ctx.throw(401, 'Unauthorized'); // если нет массива roles
+		const user = ctx.state.user;
 
 		if (user.isAdmin()) authorized = true;
+		else authorized = user.hasRoles(allowedRoles); // проверка наличия ролей у юзера
+
+		if (authorized) return next();
 		else {
-			authorized = user.hasRoles(allowedRoles); // проверка наличия ролей у юзера
-
-			// for (let i = 0; i < user.roles.length; i++) {
-			// 	authorized = allowedRoles.indexOf(user.roles[i]) != -1; // is authorized, true or false, admin is all allowed
-			// 	if (authorized) break;
-			// }
-		}
-
-		if (!authorized) ctx.throw(401, 'Unauthorized');
-		else await next();
+			// return ctx.throw(403, 'Forbidden'); // почему-то не работает
+      ctx.status = 403;
+      ctx.body = {
+        message: 'Forbidden'
+      };
+    }
 	}
 };
 

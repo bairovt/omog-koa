@@ -1,22 +1,27 @@
 'use strict';
 const db = require('modules/arangodb');
 const User = require('models/User');
+const jwt = require('jsonwebtoken');
+const secretKey = require('config').get('secretKeys')[0];
 
 /* authentication middleware */
 
 module.exports = async function (ctx, next){
-  if (ctx.session.user_key) { // user authenticated
-    console.log(ctx.request.url);
-    let persons = db.collection('Persons');
-    let person = await persons.document(ctx.session.user_key);
-    ctx.state.user = new User(person); // set user state of the request
-    return await next();
-  } // user is going to authenticate
-  else if ( ['/sign/in', '/api/user/signin', '/api/user/signout'].includes(ctx.request.url) ) {
+  // console.log('Auth header: ', ctx.request.header.authorization);
+  if ( ['/api/user/signin', '/api/user/signout'].includes(ctx.request.url) ) {
     return await next();
   }
-  else { //request is not authenticated
+  const authHeader = ctx.request.header.authorization;
+  if (authHeader) {
+    const authToken = authHeader.split(' ').pop();
+    const profile = jwt.verify(authToken, secretKey); // may throw JsonWebTokenError,
+    ctx.state.user = new User(profile); // set user state of the request
+    return await next();
+  } else {
 	  ctx.status = 401;
-	  ctx.body = {location: '/signin'};
+	  ctx.body = {
+	    message: 'Empty authorization header',
+	    location: '/signin'
+	  };
   }
 };

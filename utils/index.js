@@ -4,19 +4,22 @@ const db = require('modules/arangodb');
 const aql = require('arangojs').aql;
 
 function procName(name) {
+  // throw new Error('Ошибка валидации');
   // todo: проработать угрозу aql-инъекций
+  if (!name) return undefined;
 	name = name.trim(); // убираем пробелы по краям
   if(name.length > 150) throw {status: 400, message: 'Name is too long'};
-	if (name === "") return "";
+	// if (name === "") return "";
 	name = name[0].toUpperCase() + name.slice(1); // первая буква - большая
 	return name;
 }
 
 function procText(text) {
+  if (!text) return undefined;
   // todo: проработать угрозу aql-инъекций
 	text = text.trim(); // убираем пробелы по краям
   if(text.length > 15000) throw {status: 400, message: 'Text is too long'};
-	if (text === "") return "";
+	// if (text === "") return "";
 	text = text[0].toUpperCase() + text.slice(1); // первая буква - большая
 	return text;
 }
@@ -44,18 +47,4 @@ async function personKeyGen(surname, name , midname) {
   }
 }
 
-async function getPerson(key) {
-	let Persons = db.collection('Persons');
-	return await Persons.document(key);
-}
-
-async function createChildEdge(ctx, fromId, toId) {
-	const Child = db.edgeCollection('child');
-	let childEdge = {
-		created: new Date(),
-		addedBy: ctx.state.user._id
-	};
-	await Child.save(childEdge, fromId, toId);
-}
-
-module.exports = {procName, procText, personKeyGen, getPerson, createChildEdge};
+module.exports = {procName, procText};
