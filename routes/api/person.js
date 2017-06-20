@@ -1,10 +1,13 @@
 'use strict';
-const db = require('modules/arangodb');
+const db = require('lib/arangodb');
 const aql = require('arangojs').aql;
 const Router = require('koa-router');
 const authorize =require('middleware/authorize');
-const {getPerson, getAncsAndDescs, getAncsDescsIdUnion, getCommonAncs} = require('helpers/fetch-db');
-const {createChildEdge, createPerson} = require('helpers/person');
+const {getPerson, getAncsAndDescs, getAncsDescsIdUnion, getCommonAncs} = require('lib/fetch-db'),
+      {createChildEdge, createPerson, createUser} = require('lib/person');
+const {personSchema, userSchema} = require('lib/schemas'),
+      Joi = require('joi');
+
 
 const router = new Router();
 
@@ -22,14 +25,17 @@ async function getAncDes(ctx) {
     let person = await db.query(aql`
 		  FOR p IN Persons
 		      FILTER p._key == ${person_key}
-		      RETURN merge(p, { 
-		          rod: FIRST(FOR rod IN Rods            
-		                  FILTER p.rod == rod._id
-		                  RETURN {name: rod.name, _key: rod._key}),
-		          addedBy: FIRST(FOR added IN Persons
-		                      FILTER added._id == p.addedBy
-		                      RETURN {name: added.name, surname: added.surname, _key: added._key})
-		      })`
+		      // RETURN merge(p, { 
+		      RETURN merge({ _key: p._key, _id: p._id, name: p.name, surname: p.surname, midname: p.midname, 
+		        gender: p.gender, maidenName: p.maidenName, birthYear: p.birthYear, image: p.image }, 
+            { 
+                rod: FIRST(FOR rod IN Rods            
+                        FILTER p.rod == rod._id
+                        RETURN {name: rod.name, _key: rod._key}),
+                addedBy: FIRST(FOR added IN Persons
+                            FILTER added._id == p.addedBy
+                            RETURN {name: added.name, surname: added.surname, _key: added._key})
+            })`
     ).then(cursor => cursor.next());
     if (person === undefined) ctx.throw(404, 'person not found');
     // находим предков и потомков персоны
@@ -39,10 +45,8 @@ async function getAncDes(ctx) {
 
 async function createPersonPost(ctx){
   const {personData, isUser, userData} = ctx.request.body;
-  const opts = {
-    userData: isUser ? userData : false
-  };
-  const person = await createPerson(personData, ctx.state.user._id, opts);
+  const person = await createPerson(personData, ctx.state.user._id);
+  if (isUser) await createUser(person._id, userData);
   ctx.body = {newPersonKey: person._key};
 }
 
@@ -56,9 +60,9 @@ async function removePerson(ctx) { // key
      */
   const personsCollection = db.collection('Persons');
   const person = await personsCollection.document(key); //person to remove
-//todo: !!! подтверждение удаления
-//todo: продумать удалени персоны
-//todo: запрет удаления персоны самой себя
+  //todo: !!! подтверждение удаления
+
+  if (person._id === user._id) ctx.throw(400, 'Запрещено удалять себя'); // запрет удаления персоны самой себя
   if (person.addedBy === user._id || user.isAdmin() || user.hasRoles(['moderator'])) { // проверка санкций
     /* правильное удаление Person (вершины графа удалять вместе со связями) */
     const childGraph = db.graph('childGraph');
@@ -66,14 +70,25 @@ async function removePerson(ctx) { // key
     await vertexCollection.remove(key); // todo: test проверка несуществующего ключа
     ctx.body = {message: 'Person removed'};
   } else {
-    ctx.throw(403, 'Forbidden');
+    ctx.throw(403, 'Нет санкций на удаление персоны');
   }
 }
 
-async function personGet(ctx) {
-  const {name, surname, midname , _key, _id} = await getPerson(ctx.params.person_key);
+async function fetchPerson(ctx) {
+  /* used in update person page */
+  const person = await getPerson(ctx.params.person_key);
   ctx.body = {
-    person: {name, surname, midname, _key, _id}
+    person: {
+      _key: person._key,
+      gender: person.gender,
+      name: person.name,
+      surname: person.surname,
+      midname: person.midname,
+      maidenName: person.maidenName,
+      birthYear: person.birthYear,
+      rod: person.rod,
+      lifestory: person.lifestory
+    }
   }
 }
 
@@ -101,7 +116,6 @@ async function linkRelationPost(ctx){
   let commonAncs = await getCommonAncs(fromPerson._id, toPerson._id);
   if (commonAncs.length) ctx.throw(400, 'Нельзя в качестве ребенка указать человека с общим предком');
 
-
   //соединение только своих персон (кроме админа и модератора)
   if (fromPerson.addedBy === user._id && toPerson.addedBy === user._id || // both persons added by user
       fromPerson.addedBy === user._id && toPerson._id === user._id || // one person added by user, other is user
@@ -120,55 +134,63 @@ async function addPerson(ctx){
    person_key - ключ существующего person, к которому добавляем нового person
    reltype: "father", "mother", "son", "daughter" */
   const {person_key: startKey, reltype} = ctx.params;
+  // todo: verification № 1: does person already have mother or father
+  // if ([])
+
   const startPerson = await getPerson(startKey);
   const user = ctx.state.user;
   // проверка санкций: разрешено добавлять либо к себе, либо к своим (addedBy)
+  console.log('дб', startPerson._id, user._id);
   if (startPerson.addedBy === user._id || startPerson._id === user._id) {} //continue
   else ctx.throw(403, "Нет санкций на добавление персоны");
   const newPerson = await createPerson(ctx.request.body.personData, ctx.state.user._id);
 
   // create parent edge
-  let fromId, toId;
-  if (reltype === 'father' || reltype === 'mother' ) {
+  let fromId = startPerson._id, // reltype: 'son' or 'daughter'
+      toId = newPerson._id;
+  if ( ['father', 'mother'].includes(reltype) ) { // reverse
     fromId = newPerson._id;
     toId = startPerson._id;
-  } else if (reltype === 'son' || reltype === 'daughter' ) {
-    fromId = startPerson._id;
-    toId = newPerson._id;
   }
   await createChildEdge(fromId, toId, user._id);
 
   ctx.body = {newPersonKey: newPerson._key};
 }
 
-async function editPersonPost(ctx, next){
-  /* startKey, reltype
-   key, startKey - ключ существующего person, к которому добавляем нового person
-   reltype: "father", "mother", "son", "daughter" */
-  const {key} = ctx.params;
-  const editPerson = await getPerson(key);
+async function updatePerson(ctx){
+  // todo: история изменений
+  const {person_key} = ctx.params;
+  const person = await getPerson(person_key);
   const user = ctx.state.user;
-  // проверка санкций: разрешено изменять либо себя, либо своих (addedBy)
-  if (editPerson.addedBy === user._id || editPerson._id === user._id) {} //continue
-  else ctx.throw(403, "Нет санкций");
-  db.query(aql`FOR p IN Persons FILTER p._key == ${key}
-						UPDATE p WITH {}`);
-  // const newPerson = await createPerson(ctx, reltype);
+  // проверка санкций: разрешено изменять либо себя, либо своих (если нет пользователя),
+  if (person._id === user._id || (person.addedBy === user._id && !person.user)) {} //continue
+  else ctx.throw(403, "Нет санкций на изменение персоны");
 
-  ctx.redirect(`/person/${key}`);
+  let result = Joi.validate(ctx.request.body.person, personSchema, {stripUnknown: true});
+  if (result.error) {
+    console.log(result.error.details, result.value);
+    ctx.status = 400;
+    ctx.body = {
+      message: result.error.message
+    }
+  } else {
+    let validPersonData = result.value;
+    validPersonData.updated = new Date();
+    await db.collection('Persons').update(person._id, validPersonData);
+    ctx.body = {
+      message: 'person updated'
+    };
+  }
 }
 
 router
     .get('/all', getAllPersons)
     .post('/create', authorize(['manager']), createPersonPost)
-    // .post('/create', createPersonPost)
-    .get('/:person_key/get', personGet)
+    .get('/:person_key/fetch', fetchPerson)
     .post('/link-relation', linkRelationPost)
     .post('/:person_key/add/:reltype', addPerson)    // обработка добавления персоны
+    .post('/:person_key/update', updatePerson)    // обработка добавления персоны
     .get('/:person_key/get-anc-des', getAncDes)    // страница человека
     .get('/:person_key/remove', removePerson);
-    //.use(authorize(['admin', 'manager']))
-    // .get('/:key/add/:rel', addPerson)   // страница добавления человека
-    // .post('/:key/add/:rel', addPerson)    // обработка добавления человека
 
 module.exports = router.routes();

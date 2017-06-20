@@ -1,5 +1,5 @@
 'use strict';
-const db = require('modules/arangodb');
+const db = require('lib/arangodb');
 const aql = require('arangojs').aql;
 const Router = require('koa-router');
 

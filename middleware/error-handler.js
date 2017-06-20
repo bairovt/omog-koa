@@ -5,7 +5,7 @@ module.exports = async function (ctx, next) {
     try {
         await next();
     } catch (err){
-      // console.error(err, err.status);
+        console.error(err, err.status);
         if (err.status) {
           ctx.status = err.status;
           ctx.body = {
