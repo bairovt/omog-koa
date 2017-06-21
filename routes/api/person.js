@@ -2,8 +2,9 @@
 const db = require('lib/arangodb');
 const aql = require('arangojs').aql;
 const Router = require('koa-router');
+const loGet = require('lodash').get;
 const authorize =require('middleware/authorize');
-const {getPerson, getAncsAndDescs, getAncsDescsIdUnion, getCommonAncs} = require('lib/fetch-db'),
+const {getPerson, getAncsAndDescs, getAncsDescsIdUnion, getCommonAncs, findClosestUsers} = require('lib/fetch-db'),
       {createChildEdge, createPerson, createUser} = require('lib/person');
 const {personSchema, userSchema} = require('lib/schemas'),
       Joi = require('joi');
@@ -162,23 +163,33 @@ async function updatePerson(ctx){
   const {person_key} = ctx.params;
   const person = await getPerson(person_key);
   const user = ctx.state.user;
-  // проверка санкций: разрешено изменять либо себя, либо своих (если нет пользователя),
-  if (person._id === user._id || (person.addedBy === user._id && !person.user)) {} //continue
-  else ctx.throw(403, "Нет санкций на изменение персоны");
-
-  let result = Joi.validate(ctx.request.body.person, personSchema, {stripUnknown: true});
-  if (result.error) {
-    console.log(result.error.details, result.value);
-    ctx.status = 400;
-    ctx.body = {
-      message: result.error.message
+  let closestUsers = []; // _id пользователя, который может изменять person
+  // проверка санкций: Изменять персону может ближайший родственник-юзер персоны (самый близкий - сам person)
+  // if(loGet(person, 'user.status', false) === 1)
+  // todo: проработать возможность наличия нескольких ближайших родственников: done
+  // продумать случай, когда ближайший родственник-юзер - не активный пользователь, чтобы была возможность делегировать полномочия другому юзеру
+  closestUsers = await findClosestUsers(person._id); // может включать саму персону
+  if (closestUsers.some(el => user._id === el._id))  // если user является ближайшим родственником-юзером
+  {
+    let result = Joi.validate(ctx.request.body.person, personSchema, {stripUnknown: true});
+    if (result.error) {
+      console.log(result.error.details, result.value);
+      ctx.status = 400;
+      ctx.body = {
+        message: result.error.message
+      }
+    } else {
+      let validPersonData = result.value;
+      validPersonData.updated = new Date();
+      await db.collection('Persons').update(person._id, validPersonData);
+      ctx.body = {
+        message: 'person updated'
+      };
     }
   } else {
-    let validPersonData = result.value;
-    validPersonData.updated = new Date();
-    await db.collection('Persons').update(person._id, validPersonData);
+    ctx.status = 403;
     ctx.body = {
-      message: 'person updated'
+      message: "Нет санкций на изменение персоны"
     };
   }
 }
@@ -189,7 +200,7 @@ router
     .get('/:person_key/fetch', fetchPerson)
     .post('/link-relation', linkRelationPost)
     .post('/:person_key/add/:reltype', addPerson)    // обработка добавления персоны
-    .post('/:person_key/update', updatePerson)    // обработка добавления персоны
+    .post('/:person_key/update', updatePerson)    // обработка изменения персоны
     .get('/:person_key/get-anc-des', getAncDes)    // страница человека
     .get('/:person_key/remove', removePerson);
 
