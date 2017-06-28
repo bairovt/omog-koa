@@ -163,12 +163,9 @@ async function updatePerson(ctx){
   const {person_key} = ctx.params;
   const person = await getPerson(person_key);
   const user = ctx.state.user;
-  let closestUsers = []; // _id пользователя, который может изменять person
   // проверка санкций: Изменять персону может ближайший родственник-юзер персоны (самый близкий - сам person)
-  // if(loGet(person, 'user.status', false) === 1)
-  // todo: проработать возможность наличия нескольких ближайших родственников: done
   // продумать случай, когда ближайший родственник-юзер - не активный пользователь, чтобы была возможность делегировать полномочия другому юзеру
-  closestUsers = await findClosestUsers(person._id); // может включать саму персону
+  let closestUsers = await findClosestUsers(person._id); // юзеры, которые могут изменять person
   if (closestUsers.some(el => user._id === el._id))  // если user является ближайшим родственником-юзером
   {
     let result = Joi.validate(ctx.request.body.person, personSchema, {stripUnknown: true});

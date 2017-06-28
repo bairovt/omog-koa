@@ -6,18 +6,19 @@ const Router = require('koa-router');
 
 const router = new Router();
 
+// hero.rod.so
 async function getHeroContribs(ctx, next) {
   const contribs = await db.query(aql`FOR c IN HeroContribs SORT c.date RETURN c`).then(cursor => cursor.all());
   ctx.set('Access-Control-Allow-Origin', '*'); // allow cross site request (for requests from hero.rod.so)
-  return ctx.body = {contribs};
+  return ctx.body = contribs;
 }
-
+// buryad.org
 async function getRoundTable(ctx, next) {
   const persons = await db.query(aql`FOR p IN RoundTable SORT p.roundTableOrder, p.fullname RETURN p`).then(cursor => cursor.all());
   ctx.set('Access-Control-Allow-Origin', '*'); // allow cross site request (for requests from hero.rod.so)
   return ctx.body = {persons};
 }
-
+// buryad.org
 async function getMemoryBook(ctx, next) {
   const letter = ctx.params.letter.toLowerCase();
   let pattern =  '';
@@ -25,8 +26,7 @@ async function getMemoryBook(ctx, next) {
   let lifestory = ctx.query.lifestory || '';
   let cursor = null;
   switch(letter){
-    case 'all':
-      cursor = await db.query(aql`FOR p IN Persons FILTER p.repressed==1 SORT p.name RETURN p`);
+    case 'all':      cursor = await db.query(aql`FOR p IN Persons FILTER p.repressed==1 SORT p.name RETURN p`);
       break;
     case 'search':
       cursor = await db.query(aql`FOR p IN Persons FILTER p.repressed==1

@@ -20,9 +20,9 @@ app.use(require('middleware/error-handler')); // обработка ошибок
 app.use(require('koa-bodyparser')());
 
 /* free api routes */
-const freeApiRouter = new Router();
-freeApiRouter.use('/free-api', require('routes/free-api'));
-app.use(freeApiRouter.routes());
+// const freeApiRouter = new Router();
+// freeApiRouter.use('/free-api', require('routes/free-api'));
+// app.use(freeApiRouter.routes());
 
 /* authentication middleware */
 app.use(require('middleware/authenticate'));
