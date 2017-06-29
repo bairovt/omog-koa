@@ -10,5 +10,6 @@ module.exports = {
     server: {
         port: 8001
     },
-    env: 'development'
+    env: 'development',
+    corsOrigin: 'http://localhost:8080'
 };

@@ -12,8 +12,8 @@ const cors = require('middleware/cors');
 const app = new Koa();
 app.keys = config.get('secretKeys');
 /* middle wares */
+app.use(cors); // use cors to allow requests from different origin (localhost:8080 - on dev, api.rod.so - on prod)
 if (app.env === 'development') {
-  app.use(cors); // use cors to allow requests from localhost:8080 in development
   app.use(logger()); // логгер на деве
 }
 app.use(require('middleware/error-handler')); // обработка ошибок
