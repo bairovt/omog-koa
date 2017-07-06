@@ -1,5 +1,7 @@
 'use strict';
 
+// todo: перенаправить лог ошибок в production на почту
+
 /* error handler */
 module.exports = async function (ctx, next) {
     try {

@@ -11,8 +11,20 @@ const cors = require('middleware/cors');
 
 const app = new Koa();
 app.keys = config.get('secretKeys');
+const server = require('http').createServer(app.callback());
+
+/* socket.io communication */
+const io = require('socket.io')(server);
+io.on('connection', function(client){
+  // console.log('socket.io connection established');
+  client.on('message', function(message){
+    io.emit('message', message)
+  })
+});
+
+
 /* middle wares */
-app.use(cors); // use cors to allow requests from different origin (localhost:8080 - on dev, api.rod.so - on prod)
+app.use(cors); // use cors to allow requests from different origin (localhost:8080 - on dev, rod.so - on prod)
 if (app.env === 'development') {
   app.use(logger()); // логгер на деве
 }
@@ -33,13 +45,15 @@ apiRouter
     .use('/api/user', require('routes/api/user'))
     .use('/api/rod', require('routes/api/rod'))
     .use('/api/person', require('routes/api/person'));
+    // .use('/api/messages', require('routes/api/messages'));
 app.use(apiRouter.routes());
 
 /* start koa server */
 if (module.parent) {
-    module.exports = app;
+  module.exports = app;
 } else {
-    let port = config.server.port;
-    app.listen(port);
-    console.log(`ROD.SO listening on port ${port}`)
+  let port = config.server.port;
+  // app.listen(port);
+  server.listen(port);
+  console.log(`ROD.SO listening on port ${port}`)
 }

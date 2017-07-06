@@ -24,6 +24,7 @@
     "koa-swig": "^2.2.1",
     "lodash": "^4.17.4",
     "md5": "^2.2.1",
+    "socket.io": "^2.0.3",
     "transliteration": "^1.1.16"
   },
   "devDependencies": {

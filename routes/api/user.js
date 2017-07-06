@@ -25,10 +25,11 @@ async function signIn(ctx){
       authToken,
       user: {
         /* same as in currentUser function (candidate for refactoring) */
+        _id: person._id,
         _key: person._key,
         name: person.name
       },
-      location:'rods' // todo: сделать возврат на запрашиваемую страницу
+      location: 'rods' // todo: сделать возврат на запрашиваемую страницу
     };
   } else {
     ctx.throw(401, 'Неверный логин или пароль');
@@ -39,8 +40,9 @@ async function currentUser(ctx){
   /* current user is fetched when vue app is created (candidate for refactoring) */
   ctx.body = {
     user: {
-      name: ctx.state.user.name,
-      _key: ctx.state.user._key
+      _id: ctx.state.user._id,
+      _key: ctx.state.user._key,
+      name: ctx.state.user.name
     }
   }
 }
