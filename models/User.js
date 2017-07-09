@@ -1,18 +1,11 @@
 'use strict';
 
  module.exports = class User {
-	// constructor(person){
-	// 	this._key = person._key;
-	// 	this._id = person._id;
-	// 	this.name = person.name;
-	// 	this.roles = person.user.roles || [];
-	// }
-
 	constructor(profile){
-		this._key = profile.userKey;
-		this._id = profile.userId;
+		this._key = profile._key;
+		this._id = profile._id;
 		this.name = profile.name;
-		this.roles = profile.userRoles || [];
+		this.roles = profile.roles || [];
 	}
 
 	isAdmin(){
@@ -20,7 +13,7 @@
 		return this.roles.includes('admin');
 	}
 
-	hasRoles(allowedRoles){ // array of roles (strings)
+	hasRoles(allowedRoles){ // array
 		/* Check if user has one of the allowed roles */
 		return this.roles.some(role => allowedRoles.includes(role)); // true or false
 	}

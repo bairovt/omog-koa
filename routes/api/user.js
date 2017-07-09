@@ -13,22 +13,15 @@ async function signIn(ctx){
   if (!person) ctx.throw(401, 'Неверный логин или пароль');
   const passCheck = await checkPassword(password, person.user.passHash);
   if (passCheck && person.user.status===1) {
-    // ctx.session.user_key = person._key;
     const profile = {     //payload
       name: person.name,
-      userKey: person._key,
-      userId: person._id,
-      userRoles: person.user.roles
+      _key: person._key,
+      _id: person._id,
+      roles: person.user.roles
     };
     const authToken = jwt.sign(profile, secretKey);
     ctx.body = {
       authToken,
-      user: {
-        /* same as in currentUser function (candidate for refactoring) */
-        _id: person._id,
-        _key: person._key,
-        name: person.name
-      },
       location: 'rods' // todo: сделать возврат на запрашиваемую страницу
     };
   } else {
@@ -36,19 +29,7 @@ async function signIn(ctx){
   }
 }
 
-async function currentUser(ctx){
-  /* current user is fetched when vue app is created (candidate for refactoring) */
-  ctx.body = {
-    user: {
-      _id: ctx.state.user._id,
-      _key: ctx.state.user._key,
-      name: ctx.state.user.name
-    }
-  }
-}
-
 router
-  .post('/signin', signIn)
-  .get('/current', currentUser);
+  .post('/signin', signIn);
 
 module.exports = router.routes();
