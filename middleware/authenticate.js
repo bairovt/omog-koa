@@ -14,7 +14,7 @@ module.exports = async function (ctx, next){
   const authHeader = ctx.request.header.authorization;
   if (authHeader) {
     const authToken = authHeader.split(' ').pop();
-    const profile = jwt.verify(authToken, secretKey); // todo: may throw JsonWebTokenError,
+    const profile = jwt.verify(authToken, secretKey); //may throw JsonWebTokenError,
     ctx.state.user = new User(profile); // set user state of the request
     return await next();
   } else {

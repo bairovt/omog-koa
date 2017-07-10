@@ -8,19 +8,13 @@ const Router = require('koa-router');
 const logger = require('koa-logger');
 const convert = require('koa-convert');
 const cors = require('middleware/cors');
+const jwt = require('jsonwebtoken');
+
 
 const app = new Koa();
-app.keys = config.get('secretKeys');
+// app.keys = config.get('secretKeys');
+const secretKey = config.get('secretKeys')[0];
 const server = require('http').createServer(app.callback());
-
-/* socket.io communication */
-const io = require('socket.io')(server);
-io.on('connection', function(client){
-  // console.log('socket.io connection established');
-  client.on('message', function(message){
-    io.emit('message', message)
-  })
-});
 
 
 /* middle wares */
@@ -35,6 +29,25 @@ app.use(require('koa-bodyparser')());
 // const freeApiRouter = new Router();
 // freeApiRouter.use('/free-api', require('routes/free-api'));
 // app.use(freeApiRouter.routes());
+
+/* socket.io communication */
+const io = require('socket.io')(server);
+io.use((socket, next) => {
+  let token = socket.handshake.query.token;
+  try {
+    jwt.verify(token, secretKey)
+  } catch (e) {
+    // console.error('invalid token', e);
+    return next(e)
+  }
+  return next()
+});
+io.on('connection', function(socket){
+  // console.log('Это мое имя из токена: ' + socket.handshake.query.token);
+  socket.on('message', function(message){
+    io.emit('message', message)
+  })
+});
 
 /* authentication middleware */
 app.use(require('middleware/authenticate'));
