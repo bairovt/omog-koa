@@ -32,17 +32,18 @@ app.use(require('koa-bodyparser')());
 
 /* socket.io communication */
 const io = require('socket.io')(server);
-io.use((socket, next) => {
-  let token = socket.handshake.query.token;
+io.use(function(socket, next) {
   try {
+    let token = socket.handshake.query.token;
     jwt.verify(token, secretKey)
   } catch (e) {
     // console.error('invalid token', e);
-    return next(e)
+    return next(new Error('not authorised'));
+    // socket.disconnect(true);
   }
-  return next()
-});
-io.on('connection', function(socket){
+  next()
+})
+.on('connection', function(socket){
   // console.log('Это мое имя из токена: ' + socket.handshake.query.token);
   socket.on('message', function(message){
     io.emit('message', message)

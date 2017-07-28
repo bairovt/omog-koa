@@ -22,7 +22,7 @@ async function signIn(ctx){
     const authToken = jwt.sign(profile, secretKey);
     ctx.body = {
       authToken,
-      location: 'rods' // todo: сделать возврат на запрашиваемую страницу
+      location: '/person/' + profile._key // todo: сделать возврат на запрашиваемую страницу
     };
   } else {
     ctx.throw(401, 'Неверный логин или пароль');
