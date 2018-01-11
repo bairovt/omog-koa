@@ -26,11 +26,10 @@ async function getAncDes(ctx) {
     let person = await db.query(aql`
 		  FOR p IN Persons
 		      FILTER p._key == ${person_key}
-		      // RETURN merge(p, { 
-		      RETURN merge({ _key: p._key, _id: p._id, name: p.name, surname: p.surname, midname: p.midname, 
-		        gender: p.gender, maidenName: p.maidenName, birthYear: p.birthYear, image: p.image }, 
-            { 
-                rod: FIRST(FOR rod IN Rods            
+		      RETURN merge({ _key: p._key, _id: p._id, name: p.name, surname: p.surname, midname: p.midname,
+		        gender: p.gender, maidenName: p.maidenName, birthYear: p.birthYear, image: p.image, about: p.about },
+            {
+                rod: FIRST(FOR rod IN Rods
                         FILTER p.rod == rod._id
                         RETURN {name: rod.name, _key: rod._key}),
                 addedBy: FIRST(FOR added IN Persons
