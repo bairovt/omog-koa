@@ -122,8 +122,10 @@ async function linkRelationPost(ctx){
       fromPerson._id === user._id && toPerson.addedBy === user._id || // one person added by user, other is user
       user.isAdmin()) {}
   else ctx.throw(403, 'Forbidden: to link Persons added by different users');
-
-  await createChildEdge(fromPerson._id, toPerson._id, user._id);
+  const edgeData = {
+    addedBy: user._id
+  }
+  await createChildEdge(edgeData, fromPerson._id, toPerson._id);
   ctx.body = {
     location: '/person/'+start_key
   }
@@ -134,26 +136,27 @@ async function addPerson(ctx){
    person_key - ключ существующего person, к которому добавляем нового person
    reltype: "father", "mother", "son", "daughter" */
   const {person_key: startKey, reltype} = ctx.params;
+  const {personData, relation} = ctx.request.body
   // todo: verification № 1: does person already have mother or father
-  // if ([])
-
   const startPerson = await getPerson(startKey);
   const user = ctx.state.user;
-  // проверка санкций: разрешено добавлять либо к себе, либо к своим (addedBy)
-  console.log('дб', startPerson._id, user._id);
+  // проверка санкций: разрешено добавлять либо к себе, либо к своим addedBy
+  // console.log('дб', startPerson._id, user._id);
   if (startPerson.addedBy === user._id || startPerson._id === user._id) {} //continue
   else ctx.throw(403, "Нет санкций на добавление персоны");
-  const newPerson = await createPerson(ctx.request.body.personData, ctx.state.user._id);
-
-  // create parent edge
+  const newPerson = await createPerson(personData, ctx.state.user._id);
+  // create child edge
   let fromId = startPerson._id, // reltype: 'son' or 'daughter'
       toId = newPerson._id;
   if ( ['father', 'mother'].includes(reltype) ) { // reverse
     fromId = newPerson._id;
     toId = startPerson._id;
   }
-  await createChildEdge(fromId, toId, user._id);
-
+  const edgeData = {
+    addedBy: user._id,
+  }
+  if (relation.adopted) edgeData.adopted = true
+  await createChildEdge(edgeData, fromId, toId);
   ctx.body = {newPersonKey: newPerson._key};
 }
 
@@ -191,13 +194,13 @@ async function updatePerson(ctx){
 }
 
 router
-    .get('/all', getAllPersons)
-    .post('/create', authorize(['manager']), createPersonPost)
-    .get('/:person_key/fetch', fetchPerson)
-    .post('/link-relation', linkRelationPost)
-    .post('/:person_key/add/:reltype', addPerson)    // обработка добавления персоны
-    .post('/:person_key/update', updatePerson)    // обработка изменения персоны
-    .get('/:person_key/get-anc-des', getAncDes)    // страница человека
-    .get('/:person_key/remove', removePerson);
+  .get('/all', getAllPersons)
+  .post('/create', authorize(['manager']), createPersonPost)
+  .get('/:person_key/fetch', fetchPerson)
+  .post('/link-relation', linkRelationPost)
+  .post('/:person_key/add/:reltype', addPerson)    // обработка добавления персоны
+  .post('/:person_key/update', updatePerson)    // обработка изменения персоны
+  .get('/:person_key/get-anc-des', getAncDes)    // страница человека
+  .get('/:person_key/remove', removePerson);
 
 module.exports = router.routes();
