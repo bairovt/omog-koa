@@ -14,6 +14,7 @@
 	}
 
 	hasRoles(allowedRoles){ // array
+    if (this.roles.includes('admin')) return true // admin has all roles
 		/* Check if user has one of the allowed roles */
 		return this.roles.some(role => allowedRoles.includes(role)); // true or false
 	}

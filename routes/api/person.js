@@ -3,7 +3,7 @@ const db = require('lib/arangodb');
 const aql = require('arangojs').aql;
 const Router = require('koa-router');
 const loGet = require('lodash').get;
-const authorize =require('middleware/authorize');
+const authorize = require('middleware/authorize');
 const {getPerson, getAncsAndDescs, getAncsDescsIdUnion, getCommonAncs, findClosestUsers} = require('lib/fetch-db'),
       {createChildEdge, createPerson, createUser} = require('lib/person');
 const {personSchema, userSchema} = require('lib/schemas'),
@@ -43,7 +43,7 @@ async function getAncDes(ctx) {
     ctx.body = {person, ancestors, descendants }; //gens, gensCount
 }
 
-async function createPersonPost(ctx){
+async function newPerson(ctx){ //POST
   const {personData, isUser, userData} = ctx.request.body;
   const person = await createPerson(personData, ctx.state.user._id);
   if (isUser) await createUser(person._id, userData);
@@ -92,11 +92,13 @@ async function fetchPerson(ctx) {
   }
 }
 
-async function linkRelationPost(ctx){
+async function setRelation(ctx){ // POST
   //todo: запрос на соединение с чужой персоной
   //todo: запрет указания отца/матери, если отец/мать уже есть
   const user = ctx.state.user;
-  let {start_key, end_key, reltype} = ctx.request.body;
+  // only manager can set relation
+  if (!user.hasRoles('manager')) ctx.throw(403, 'only manager can set relation');
+  let {start_key, end_key, reltype, adopted} = ctx.request.body;
   // проверка № 1
   if (start_key === end_key) ctx.throw(400, 'Нельзя человека указать ребенком самого себя');
 
@@ -109,6 +111,8 @@ async function linkRelationPost(ctx){
   const fromPerson = await getPerson(fromKey);
   const toPerson = await getPerson(toKey);
 
+  /* todo: заменить проверки №2 и №3 на полный траверс (!adopted) родственников - нельзя в качестве родного родителя или
+      ребенка указать кровного родственника (adopted - можно) */
   // проверка № 2
   let ancsAndDescs = await getAncsDescsIdUnion(fromPerson._id);
   if (ancsAndDescs.includes(toPerson._id)) ctx.throw(400, 'Нельзя в качестве ребенка указать предка или потомка');
@@ -116,22 +120,23 @@ async function linkRelationPost(ctx){
   let commonAncs = await getCommonAncs(fromPerson._id, toPerson._id);
   if (commonAncs.length) ctx.throw(400, 'Нельзя в качестве ребенка указать человека с общим предком');
 
-  //соединение только своих персон (кроме админа и модератора)
-  if (fromPerson.addedBy === user._id && toPerson.addedBy === user._id || // both persons added by user
-      fromPerson.addedBy === user._id && toPerson._id === user._id || // one person added by user, other is user
-      fromPerson._id === user._id && toPerson.addedBy === user._id || // one person added by user, other is user
-      user.isAdmin()) {}
-  else ctx.throw(403, 'Forbidden: to link Persons added by different users');
+  // todo: соединение только своих персон (кроме админа и модератора)
+  // if (fromPerson.addedBy === user._id && toPerson.addedBy === user._id || // both persons added by user
+  //     fromPerson.addedBy === user._id && toPerson._id === user._id || // one person added by user, other is user
+  //     fromPerson._id === user._id && toPerson.addedBy === user._id || // one person added by user, other is user
+  //     user.isAdmin()) {}
+  // else ctx.throw(403, 'Forbidden: to link Persons added by different users');
   const edgeData = {
     addedBy: user._id
   }
+  if (adopted) edgeData.adopted = true
   await createChildEdge(edgeData, fromPerson._id, toPerson._id);
   ctx.body = {
     location: '/person/'+start_key
   }
 }
 
-async function addPerson(ctx){
+async function addPerson(ctx){ //POST
   /** person_key, reltype
    person_key - ключ существующего person, к которому добавляем нового person
    reltype: "father", "mother", "son", "daughter" */
@@ -160,7 +165,7 @@ async function addPerson(ctx){
   ctx.body = {newPersonKey: newPerson._key};
 }
 
-async function updatePerson(ctx){
+async function updatePerson(ctx){ //POST
   // todo: история изменений
   const {person_key} = ctx.params;
   const person = await getPerson(person_key);
@@ -195,9 +200,9 @@ async function updatePerson(ctx){
 
 router
   .get('/all', getAllPersons)
-  .post('/create', authorize(['manager']), createPersonPost)
+  .post('/create', authorize(['manager']), newPerson)
   .get('/:person_key/fetch', fetchPerson)
-  .post('/link-relation', linkRelationPost)
+  .post('/set_relation', setRelation)
   .post('/:person_key/add/:reltype', addPerson)    // обработка добавления персоны
   .post('/:person_key/update', updatePerson)    // обработка изменения персоны
   .get('/:person_key/get-anc-des', getAncDes)    // страница человека
