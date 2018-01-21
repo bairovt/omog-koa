@@ -4,7 +4,7 @@ const aql = require('arangojs').aql;
 const Router = require('koa-router');
 const loGet = require('lodash').get;
 const authorize = require('middleware/authorize');
-const {getPerson, getAncsAndDescs, getAncsDescsIdUnion, getCommonAncs, findClosestUsers} = require('lib/fetch-db'),
+const {fetchPerson, fetchPredkiPotomki, fetchPredkiPotomkiIdUnion, findCommonPredki, findClosestUsers} = require('lib/fetch-db'),
       {createChildEdge, createPerson, createUser} = require('lib/person');
 const {personSchema, userSchema} = require('lib/schemas'),
       Joi = require('joi');
@@ -20,7 +20,7 @@ async function getAllPersons(ctx) {
 }
 
 /* Person page */
-async function getAncDes(ctx) {
+async function getPredkiPotomki(ctx) {
     let {person_key} = ctx.params;
     // извлечь персону с родом и добавившим
     let person = await db.query(aql`
@@ -39,8 +39,8 @@ async function getAncDes(ctx) {
     ).then(cursor => cursor.next());
     if (person === undefined) ctx.throw(404, 'person not found');
     // находим предков и потомков персоны
-    let {ancestors, descendants} = await getAncsAndDescs(person._id);
-    ctx.body = {person, ancestors, descendants }; //gens, gensCount
+    let {predki, potomki} = await fetchPredkiPotomki(person._id);
+    ctx.body = {person, predki, potomki}; //gens, gensCount
 }
 
 async function newPerson(ctx){ //POST
@@ -74,9 +74,9 @@ async function removePerson(ctx) { // key
   }
 }
 
-async function fetchPerson(ctx) {
-  /* used in update person page */
-  const person = await getPerson(ctx.params.person_key);
+/*async function getPerson(ctx) {
+  // used in update person page
+  const person = await fetchPerson(ctx.params.person_key);
   ctx.body = {
     person: {
       _key: person._key,
@@ -90,7 +90,7 @@ async function fetchPerson(ctx) {
       lifestory: person.lifestory
     }
   }
-}
+}*/
 
 async function setRelation(ctx){ // POST
   //todo: запрос на соединение с чужой персоной
@@ -108,17 +108,17 @@ async function setRelation(ctx){ // POST
     toKey = start_key;
   }
   // ключи должны быть реальными, иначе 404
-  const fromPerson = await getPerson(fromKey);
-  const toPerson = await getPerson(toKey);
+  const fromPerson = await fetchPerson(fromKey);
+  const toPerson = await fetchPerson(toKey);
 
   /* todo: заменить проверки №2 и №3 на полный траверс (!adopted) родственников - нельзя в качестве родного родителя или
       ребенка указать кровного родственника (adopted - можно) */
   // проверка № 2
-  let ancsAndDescs = await getAncsDescsIdUnion(fromPerson._id);
-  if (ancsAndDescs.includes(toPerson._id)) ctx.throw(400, 'Нельзя в качестве ребенка указать предка или потомка');
+  let predkiAndPotomki = await fetchPredkiPotomkiIdUnion(fromPerson._id);
+  if (predkiAndPotomki.includes(toPerson._id)) ctx.throw(400, 'Нельзя в качестве ребенка указать предка или потомка');
   // проверка № 3
-  let commonAncs = await getCommonAncs(fromPerson._id, toPerson._id);
-  if (commonAncs.length) ctx.throw(400, 'Нельзя в качестве ребенка указать человека с общим предком');
+  let commonPredki = await findCommonPredki(fromPerson._id, toPerson._id);
+  if (commonPredki.length) ctx.throw(400, 'Нельзя в качестве ребенка указать человека с общим предком');
 
   // todo: соединение только своих персон (кроме админа и модератора)
   // if (fromPerson.addedBy === user._id && toPerson.addedBy === user._id || // both persons added by user
@@ -142,7 +142,7 @@ async function addPerson(ctx){ //POST
   const {person_key, reltype} = ctx.params;
   const {personData, relation} = ctx.request.body
   const user = ctx.state.user;
-  const person = await getPerson(person_key);   // person к которому добавляем
+  const person = await fetchPerson(person_key);   // person к которому добавляем
   /* проверка санкций на добавление родителя или ребенка к персоне
       #0: можно добавлять к себе: person._id === user._id
       #1: может добавить ближайший родственник-юзер персоны (самый близкий - сам person)
@@ -175,7 +175,7 @@ async function addPerson(ctx){ //POST
 async function updatePerson(ctx){ //POST
   // todo: история изменений
   const {person_key} = ctx.params;
-  const person = await getPerson(person_key);
+  const person = await fetchPerson(person_key);
   const user = ctx.state.user;
   // проверка санкций: Изменять персону может ближайший родственник-юзер персоны (самый близкий - сам person)
   let closestUsers = await findClosestUsers(person._id); // юзеры, которые могут изменять person
@@ -207,11 +207,11 @@ async function updatePerson(ctx){ //POST
 router
   .get('/all', getAllPersons)
   .post('/create', authorize(['manager']), newPerson)
-  .get('/:person_key/fetch', fetchPerson)
+  // .get('/:person_key/fetch', getPerson)
   .post('/set_relation', setRelation)
   .post('/:person_key/add/:reltype', addPerson)    // обработка добавления персоны
   .post('/:person_key/update', updatePerson)    // обработка изменения персоны
-  .get('/:person_key/get-anc-des', getAncDes)    // страница человека
+  .get('/:person_key/predki-potomki', getPredkiPotomki)    // person page, profile page
   .get('/:person_key/remove', removePerson);
 
 module.exports = router.routes();

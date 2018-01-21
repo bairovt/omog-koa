@@ -45,7 +45,7 @@ async function getMemoryBook(ctx, next) {
 }
 
 router
-// .get('/get-anc-des/:person_key', getAncDes)    // страница человека
+// .get('/predki-potomki/:person_key', getAncDes)    // страница человека
     .get('/hero-contribs', getHeroContribs)
     .get('/round-table', getRoundTable)
     .get('/memorybook/:letter', getMemoryBook);
