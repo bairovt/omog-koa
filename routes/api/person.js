@@ -14,8 +14,13 @@ const router = new Router();
 
 /* All persons page */
 async function getAllPersons(ctx) {
-  let persons = await db.query(aql`FOR p IN Persons FILTER p.repressed != 1 SORT p.surname RETURN p`)
-                        .then(cursor => {return cursor.all()});
+  let persons = await db.query(
+    aql`FOR p IN Persons
+          FILTER p.repressed != 1
+          SORT p.order DESC
+          RETURN { _key: p._key, _id: p._id, name: p.name, surname: p.surname, midname: p.midname,
+		        gender: p.gender, maidenName: p.maidenName, birthYear: p.birthYear, image: p.image, about: p.about }`
+    ).then(cursor => {return cursor.all()});
   ctx.body = {persons};
 }
 
