@@ -137,32 +137,39 @@ async function setRelation(ctx){ // POST
 }
 
 async function addPerson(ctx){ //POST
-  /** person_key, reltype
-   person_key - ключ существующего person, к которому добавляем нового person
+  /** person_key - ключ существующего person, к которому добавляем нового person
    reltype: "father", "mother", "son", "daughter" */
-  const {person_key: startKey, reltype} = ctx.params;
+  const {person_key, reltype} = ctx.params;
   const {personData, relation} = ctx.request.body
-  // todo: verification № 1: does person already have mother or father
-  const startPerson = await getPerson(startKey);
   const user = ctx.state.user;
-  // проверка санкций: разрешено добавлять либо к себе, либо к своим addedBy
-  // console.log('дб', startPerson._id, user._id);
-  if (startPerson.addedBy === user._id || startPerson._id === user._id) {} //continue
-  else ctx.throw(403, "Нет санкций на добавление персоны");
-  const newPerson = await createPerson(personData, ctx.state.user._id);
-  // create child edge
-  let fromId = startPerson._id, // reltype: 'son' or 'daughter'
-      toId = newPerson._id;
-  if ( ['father', 'mother'].includes(reltype) ) { // reverse
-    fromId = newPerson._id;
-    toId = startPerson._id;
+  const person = await getPerson(person_key);   // person к которому добавляем
+  /* проверка санкций на добавление родителя или ребенка к персоне
+      #0: можно добавлять к себе: person._id === user._id
+      #1: может добавить ближайший родственник-юзер персоны (самый близкий - сам person)
+      #2: тот кто добавил персону (addedBy): person.addedBy === user._id
+      #3: manager */
+  let closestUsers = await findClosestUsers(person._id); // юзеры, которые могут изменять person
+  if (person._id === user._id || person.addedBy === user._id ||
+      user.hasRoles("manager")|| closestUsers.some(el => user._id === el._id))
+  {
+    const newPerson = await createPerson(personData, ctx.state.user._id);
+    // create child edge
+    let fromId = person._id, // reltype: 'son' or 'daughter'
+        toId = newPerson._id;
+    if ( ['father', 'mother'].includes(reltype) ) { // reverse
+      fromId = newPerson._id;
+      toId = person._id;
+    }
+    const edgeData = {
+      addedBy: user._id,
+    }
+    if (relation.adopted) edgeData.adopted = true
+    await createChildEdge(edgeData, fromId, toId);
+    ctx.body = {newPersonKey: newPerson._key};
+  } else {
+    ctx.throw(403, "Нет санкций на добавление персоны");
   }
-  const edgeData = {
-    addedBy: user._id,
-  }
-  if (relation.adopted) edgeData.adopted = true
-  await createChildEdge(edgeData, fromId, toId);
-  ctx.body = {newPersonKey: newPerson._key};
+  // todo???: verification: does person already have mother or father
 }
 
 async function updatePerson(ctx){ //POST
@@ -171,7 +178,6 @@ async function updatePerson(ctx){ //POST
   const person = await getPerson(person_key);
   const user = ctx.state.user;
   // проверка санкций: Изменять персону может ближайший родственник-юзер персоны (самый близкий - сам person)
-  // продумать случай, когда ближайший родственник-юзер - не активный пользователь, чтобы была возможность делегировать полномочия другому юзеру
   let closestUsers = await findClosestUsers(person._id); // юзеры, которые могут изменять person
   if (closestUsers.some(el => user._id === el._id))  // если user является ближайшим родственником-юзером
   {
