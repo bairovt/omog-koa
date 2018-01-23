@@ -5,7 +5,7 @@ const Router = require('koa-router');
 const loGet = require('lodash').get;
 const authorize = require('middleware/authorize');
 const {fetchPerson, fetchPredkiPotomki, fetchPredkiPotomkiIdUnion, findCommonPredki, findClosestUsers} = require('lib/fetch-db'),
-      {createChildEdge, createPerson, createUser} = require('lib/person');
+      {createChildEdge, createPerson, createUser, checkPermission} = require('lib/person');
 const {personSchema, userSchema} = require('lib/schemas'),
       Joi = require('joi');
 
@@ -43,6 +43,8 @@ async function getPredkiPotomki(ctx) {
             })`
     ).then(cursor => cursor.next());
     if (person === undefined) ctx.throw(404, 'person not found');
+    // проверка прав на изменение персоны (добавление, изменение)
+    person.editable = await checkPermission(ctx.state.user, person, {manager: true});
     // находим предков и потомков персоны
     let {predki, potomki} = await fetchPredkiPotomki(person._id);
     ctx.body = {person, predki, potomki}; //gens, gensCount
@@ -183,8 +185,9 @@ async function updatePerson(ctx){ //POST
   const person = await fetchPerson(person_key);
   const user = ctx.state.user;
   // проверка санкций: Изменять персону может ближайший родственник-юзер персоны (самый близкий - сам person)
-  let closestUsers = await findClosestUsers(person._id); // юзеры, которые могут изменять person
-  if (closestUsers.some(el => user._id === el._id))  // если user является ближайшим родственником-юзером
+  // let closestUsers = await findClosestUsers(person._id); // юзеры, которые могут изменять person
+  // if (closestUsers.some(el => user._id === el._id))  // если user является ближайшим родственником-юзером
+  if ( await checkPermission(user, person, {manager: true}) )
   {
     let result = Joi.validate(ctx.request.body.person, personSchema, {stripUnknown: true});
     if (result.error) {
