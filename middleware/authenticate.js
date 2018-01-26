@@ -20,8 +20,9 @@ module.exports = async function (ctx, next){
   } else {
 	  ctx.status = 401;
 	  ctx.body = {
-	    message: 'Empty authorization header',
-	    location: '/signin'
+      error: {
+        message: 'Empty authorization header'
+      }
 	  };
   }
 };

@@ -1,29 +1,31 @@
 'use strict';
-const Koa = require('koa');
-const config = require('config');
-const session = require('koa-session');
-const co = require('co');
-const path = require('path');
-const Router = require('koa-router');
-const logger = require('koa-logger');
-const convert = require('koa-convert');
-const cors = require('middleware/cors');
-const jwt = require('jsonwebtoken');
+const http = require('http'),
+      Koa = require('koa'),
+      config = require('config'),
+      session = require('koa-session'),
+      co = require('co'),
+      path = require('path'),
+      Router = require('koa-router'),
+      logger = require('koa-logger'),
+      convert = require('koa-convert'),
+      cors = require('middleware/cors'),
+      jwt = require('jsonwebtoken'),
+      koaBody = require('koa-body'),
+      errorHandler = require('middleware/error-handler');
 
 
 const app = new Koa();
 // app.keys = config.get('secretKeys');
 const secretKey = config.get('secretKeys')[0];
-const server = require('http').createServer(app.callback());
-
+const server = http.createServer(app.callback());
 
 /* middle wares */
 app.use(cors); // use cors to allow requests from different origin (localhost:8080 - on dev, rod.so - on prod)
-if (app.env === 'development') {
-  app.use(logger()); // логгер на деве
-}
-app.use(require('middleware/error-handler')); // обработка ошибок
-app.use(require('koa-bodyparser')());
+// логгер на деве
+if (app.env === 'development') { app.use(logger()) }
+app.use(errorHandler); // обработка ошибок
+// app.use(require('koa-bodyparser')());
+app.use(koaBody({multipart: true}));
 
 /* free api routes */
 // const freeApiRouter = new Router();
@@ -43,9 +45,9 @@ io.use(function(socket, next) {
   }
   next()
 })
-.on('connection', function(socket){
+.on('connection', function(socket) {
   // console.log('Это мое имя из токена: ' + socket.handshake.query.token);
-  socket.on('message', function(message){
+  socket.on('message', function(message) {
     io.emit('message', message)
   })
 });
@@ -54,13 +56,13 @@ io.use(function(socket, next) {
 app.use(require('middleware/authenticate'));
 
 /* api routing */
-const apiRouter = new Router();
-apiRouter
-    .use('/api/user', require('routes/api/user'))
-    .use('/api/rod', require('routes/api/rod'))
-    .use('/api/person', require('routes/api/person'));
+const router = new Router();
+router
+    .use('/api/user', require('api/user'))
+    .use('/api/rod', require('api/rod'))
+    .use('/api/person', require('api/person'));
     // .use('/api/messages', require('routes/api/messages'));
-app.use(apiRouter.routes());
+app.use(router.routes());
 
 /* start koa server */
 if (module.parent) {
@@ -69,5 +71,5 @@ if (module.parent) {
   let port = config.server.port;
   // app.listen(port);
   server.listen(port);
-  console.log(`ROD.SO listening on port ${port}`)
+  console.log(`\tMyRod.info listening on port ${port}`)
 }

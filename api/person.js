@@ -51,6 +51,8 @@ async function getPredkiPotomki(ctx) {
 }
 
 async function newPerson(ctx){ //POST
+  console.log(ctx.request.body)
+  // console.log(ctx.request.body.file)
   const {personData, isUser, userData} = ctx.request.body;
   const person = await createPerson(personData, ctx.state.user._id);
   if (isUser) await createUser(person._id, userData);
@@ -218,8 +220,9 @@ router
   // .get('/:person_key/fetch', getPerson)
   .post('/set_relation', setRelation)
   .post('/:person_key/add/:reltype', addPerson)    // обработка добавления персоны
-  .post('/:person_key/update', updatePerson)    // обработка изменения персоны
+  .patch('/:person_key', updatePerson)    // обработка изменения персоны
   .get('/:person_key/predki-potomki', getPredkiPotomki)    // person page, profile page
-  .get('/:person_key/remove', removePerson);
+  .delete('/:person_key', removePerson);
+  // .get('/:person_key/remove', removePerson);
 
 module.exports = router.routes();

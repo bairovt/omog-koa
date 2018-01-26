@@ -12,7 +12,7 @@ async function signIn(ctx){
   const person = await db.query(aql`FOR p IN Persons FILTER p.user.email==${email} RETURN p`).then(cursor => cursor.next());
   if (!person) ctx.throw(401, 'Неверный логин или пароль');
   const passCheck = await checkPassword(password, person.user.passHash);
-  if (passCheck && person.user.status===1) {
+  if (passCheck && person.user.status === 1) {
     const profile = {     //payload
       name: person.name,
       _key: person._key,
@@ -22,7 +22,7 @@ async function signIn(ctx){
     const authToken = jwt.sign(profile, secretKey);
     ctx.body = {
       authToken,
-      location: '/person/' + profile._key // todo: сделать возврат на запрашиваемую страницу
+      person_key: person._key // todo: сделать возврат на запрашиваемую страницу
     };
   } else {
     ctx.throw(401, 'Неверный логин или пароль');

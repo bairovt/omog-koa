@@ -4,7 +4,8 @@
   "description": "Social lineage net",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon rod-server.js"
   },
   "author": "Bairov Tumen Gonchikbalovich",
   "license": "ISC",
@@ -16,6 +17,7 @@
     "jsonwebtoken": "^7.3.0",
     "kcors": "^2.2.1",
     "koa": "^2.3.0",
+    "koa-body": "^2.5.0",
     "koa-bodyparser": "^4.2.0",
     "koa-convert": "^1.2.0",
     "koa-router": "^7.1.1",
@@ -29,6 +31,7 @@
     "transliteration": "^1.1.16"
   },
   "devDependencies": {
-    "koa-logger": "^3.0.0"
+    "koa-logger": "^3.0.0",
+    "nodemon": "^1.14.11"
   }
 }
