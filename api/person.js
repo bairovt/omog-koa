@@ -51,7 +51,7 @@ async function getPredkiPotomki(ctx) {
 }
 
 async function newPerson(ctx){ //POST
-  console.log(ctx.request.body)
+  // console.log(ctx.request.body)
   // console.log(ctx.request.body.file)
   const {personData, isUser, userData} = ctx.request.body;
   const person = await createPerson(personData, ctx.state.user._id);

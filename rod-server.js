@@ -27,6 +27,10 @@ app.use(errorHandler); // обработка ошибок
 // app.use(require('koa-bodyparser')());
 app.use(koaBody({multipart: true}));
 
+// app.use((ctx, next) => {
+//   ctx.throw(404, 'test error')
+// })
+
 /* free api routes */
 // const freeApiRouter = new Router();
 // freeApiRouter.use('/free-api', require('routes/free-api'));

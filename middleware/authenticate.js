@@ -19,7 +19,7 @@ module.exports = async function (ctx, next){
     return await next();
   } else {
 	  ctx.status = 401;
-	  ctx.body = {
+	  return ctx.body = {
       error: {
         message: 'Empty authorization header'
       }
