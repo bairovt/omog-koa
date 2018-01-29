@@ -7,7 +7,7 @@ const path = require('path');
 // https://github.com/koajs/koa/blob/master/docs/api/context.md#ctxthrowstatus-msg-properties
 // todo: перенаправить лог ошибок в production на почту
 const writeFile = promisify(fs.writeFile)
-const stat = promisify(fs.stat)
+// const stat = promisify(fs.stat) // todo: log dir check existance
 
 // todo: log error on production
 const root = config.get('root');
