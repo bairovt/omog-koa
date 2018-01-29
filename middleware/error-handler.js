@@ -52,7 +52,9 @@ module.exports = async function (ctx, next) {
           }
       }
     }
-    const error_log = ctx.state + '\n=====\n' + ctx.req.headers + '\n=====\n' + error.stack;
+    const error_log = '=====ctx.state\n' + JSON.stringify(ctx.state, null, 2)
+                      + '\n=====ctx.req.headers\n' + JSON.stringify(ctx.req.headers, null, 2)
+                      + '\n=====error.stack\n' + error.stack;
     await writeFile(path.join(root, 'log', Date.now() + '_' + '500.error'), error_log);
     if (process.env.NODE_ENV == 'development') console.error('\n=====\n', error.stack);
     ctx.throw(500)
