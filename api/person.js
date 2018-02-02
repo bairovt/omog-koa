@@ -26,28 +26,28 @@ async function getAllPersons(ctx) {
 
 /* Person page */
 async function getPredkiPotomki(ctx) {
-    let {person_key} = ctx.params;
-    // извлечь персону с родом и добавившим
-    let person = await db.query(aql`
-		  FOR p IN Persons
-		      FILTER p._key == ${person_key}
-		      RETURN merge({ _key: p._key, _id: p._id, name: p.name, surname: p.surname, midname: p.midname,
-		        gender: p.gender, maidenName: p.maidenName, birthYear: p.birthYear, image: p.image, about: p.about },
-            {
-                rod: FIRST(FOR rod IN Rods
-                        FILTER p.rod == rod._id
-                        RETURN {name: rod.name, _key: rod._key}),
-                addedBy: FIRST(FOR added IN Persons
-                            FILTER added._id == p.addedBy
-                            RETURN {name: added.name, surname: added.surname, _key: added._key})
-            })`
-    ).then(cursor => cursor.next());
-    if (person === undefined) ctx.throw(404, 'person not found');
-    // проверка прав на изменение персоны (добавление, изменение)
-    person.editable = await checkPermission(ctx.state.user, person, {manager: true});
-    // находим предков и потомков персоны
-    let {predki, potomki} = await fetchPredkiPotomki(person._id);
-    ctx.body = {person, predki, potomki}; //gens, gensCount
+  let {person_key} = ctx.params;
+  // извлечь персону с родом и добавившим
+  let person = await db.query(aql`
+	  FOR p IN Persons
+	      FILTER p._key == ${person_key}
+	      RETURN merge({ _key: p._key, _id: p._id, name: p.name, surname: p.surname, midname: p.midname,
+	        gender: p.gender, maidenName: p.maidenName, birthYear: p.birthYear, image: p.image, about: p.about },
+          {
+              rod: FIRST(FOR rod IN Rods
+                      FILTER p.rod == rod._id
+                      RETURN {name: rod.name, _key: rod._key}),
+              addedBy: FIRST(FOR added IN Persons
+                          FILTER added._id == p.addedBy
+                          RETURN {name: added.name, surname: added.surname, _key: added._key})
+          })`
+  ).then(cursor => cursor.next());
+  if (person === undefined) ctx.throw(404, 'person not found');
+  // проверка прав на изменение персоны (добавление, изменение)
+  person.editable = await checkPermission(ctx.state.user, person, {manager: true});
+  // находим предков и потомков персоны
+  let {predki, potomki} = await fetchPredkiPotomki(person._id);
+  ctx.body = {person, predki, potomki}; //gens, gensCount
 }
 
 async function newPerson(ctx){ //POST

@@ -2,15 +2,12 @@
 const http = require('http'),
       Koa = require('koa'),
       config = require('config'),
-      session = require('koa-session'),
-      co = require('co'),
+      // session = require('koa-session'),
       path = require('path'),
       Router = require('koa-router'),
       logger = require('koa-logger'),
-      convert = require('koa-convert'),
       cors = require('middleware/cors'),
       jwt = require('jsonwebtoken'),
-      koaBody = require('koa-body'),
       errorHandler = require('middleware/error-handler');
 
 
@@ -22,19 +19,14 @@ const server = http.createServer(app.callback());
 /* middle wares */
 app.use(cors); // use cors to allow requests from different origin (localhost:8080 - on dev, rod.so - on prod)
 // логгер на деве
-if (app.env === 'development') { app.use(logger()) }
+// if (app.env === 'development') { app.use(logger()) }
+app.use(logger())
 app.use(errorHandler); // обработка ошибок
-// app.use(require('koa-bodyparser')());
-app.use(koaBody({multipart: true}));
+app.use(require('koa-bodyparser')());
 
 // app.use((ctx, next) => {
 //   ctx.throw(404, 'test error')
 // })
-
-/* free api routes */
-// const freeApiRouter = new Router();
-// freeApiRouter.use('/free-api', require('routes/free-api'));
-// app.use(freeApiRouter.routes());
 
 /* socket.io communication */
 const io = require('socket.io')(server);
@@ -64,7 +56,8 @@ const router = new Router();
 router
     .use('/api/user', require('api/user'))
     .use('/api/rod', require('api/rod'))
-    .use('/api/person', require('api/person'));
+    .use('/api/person', require('api/person'))
+    .use('/api/upload', require('api/upload'));
     // .use('/api/messages', require('routes/api/messages'));
 app.use(router.routes());
 

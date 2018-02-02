@@ -11,5 +11,11 @@ module.exports = {
         port: 8001
     },
     env: 'development',
-    corsOrigin: 'http://localhost:8080'
+    corsOrigin: 'http://localhost:8080',
+    db: {
+      URL: 'http://127.0.0.1:8529',
+      user: 'rod',
+      password: 'rod'
+    },
+    vueDir: '/home/tumen/vuejs/vrodu.su'
 };

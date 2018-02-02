@@ -1,7 +1,7 @@
 'use strict';
 const fs = require('fs');
 const config = require('config');
-const promisify = require('util').promisify
+const promisify = require('util').promisify;
 const path = require('path');
 // https://github.com/koajs/koa/wiki/Error-Handling
 // https://github.com/koajs/koa/blob/master/docs/api/context.md#ctxthrowstatus-msg-properties
