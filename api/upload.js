@@ -21,24 +21,36 @@ const fsStat = promisify(fs.stat),
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    console.log('dir: ' + req.uploadDir)
     cb(null, req.uploadDir)
   },
   filename: function (req, file, cb) {
-    console.log('req: ' + req.url)
+    // console.log('file ' + JSON.stringify(file, null, 2))
     let filename = file.originalname;
     cb(null, file.fieldname + '_' + Date.now() + filename.slice(filename.lastIndexOf('.')))
   }
 })
+function fileFilter (req, file, cb) {
+  if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
+    cb(null, true)
+  } else {
+    const err = new Error('only .jpeg or .png images allowed');
+    err.status = 400;
+    cb(err, false)
+  }
+}
 const upload = multer({
-  storage: storage
+  storage,
+  fileFilter,
+  limits: {
+    fileSize: 1024 * 1024 * 8
+  }
 });
 
 async function prepare(ctx, next) {
   // todo: person_key verify, perms
   const {person_key} = ctx.params
   const uploadDir = path.join(config.get('vueDir'), 'static/upload', person_key)
-  console.log(uploadDir)
+  // console.log(uploadDir)
   let stats;
   try {
     stats = await fsStat(uploadDir)

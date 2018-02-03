@@ -9,7 +9,18 @@ const path = require('path');
 const writeFile = promisify(fs.writeFile)
 // const stat = promisify(fs.stat) // todo: log dir check existance
 
-// todo: log error on production
+async function logError(status, ctx, error){
+  const error_log = ctx.request.method + ' ' + ctx.request.href
+                    + '\n=====ctx.state\n' + JSON.stringify(ctx.state, null, 2)
+                    + '\n=====ctx.req.headers\n' + JSON.stringify(ctx.req.headers, null, 2)
+                    + '\n=====error.name\n' + error.name
+                    + '\n=====error.code\n' + error.code
+                    + '\n=====error.message\n' + error.message
+                    + '\n=====error.stack\n' + error.stack;
+  await writeFile(path.join(root, 'log', Date.now() + '_' + status + '.error'), error_log);
+  if (process.env.NODE_ENV == 'development') console.error(error_log);
+}
+
 const root = config.get('root');
 /* error handler */
 module.exports = async function (ctx, next) {
@@ -23,10 +34,21 @@ module.exports = async function (ctx, next) {
           message: error.message
         }
       }
-    }
-    else {
-      switch (error.name){
-        case 'JsonWebTokenError': // todo: report about possible hijacking atempt
+    } else if (error.code) {
+      switch (error.code) {
+        case 'LIMIT_FILE_SIZE':
+          await logError(400, ctx, error);
+          ctx.status = 400;
+          return ctx.body = {
+            error: {
+              message: 'file size exceeded'
+            }
+          }
+        }
+    } else {
+      switch (error.name) {
+        case 'JsonWebTokenError':
+          await logError(401, ctx, error);
           ctx.status = 401;
           return ctx.body = {
             error: {
@@ -34,6 +56,7 @@ module.exports = async function (ctx, next) {
             }
           }
         case 'ValidationError':
+          await logError(400, ctx, error);
           ctx.status = 400;
           return ctx.body = {
             error: {
@@ -52,11 +75,7 @@ module.exports = async function (ctx, next) {
           }
       }
     }
-    const error_log = '=====ctx.state\n' + JSON.stringify(ctx.state, null, 2)
-                      + '\n=====ctx.req.headers\n' + JSON.stringify(ctx.req.headers, null, 2)
-                      + '\n=====error.stack\n' + error.stack;
-    await writeFile(path.join(root, 'log', Date.now() + '_' + '500.error'), error_log);
-    if (process.env.NODE_ENV == 'development') console.error('\n=====\n', error.stack);
+    await logError(500, ctx, error);
     ctx.throw(500)
   }
 };
