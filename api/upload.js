@@ -9,15 +9,15 @@ const Router = require('koa-router');
 const multer = require('koa-multer');
 const loGet = require('lodash').get;
 const authorize = require('middleware/authorize');
-const {fetchPerson, fetchPredkiPotomki, fetchPredkiPotomkiIdUnion, findCommonPredki, findClosestUsers} = require('lib/fetch-db'),
-      {createChildEdge, createPerson, createUser, checkPermission} = require('lib/person');
+const {fetchPerson} = require('lib/fetch-db'),
+      {checkPermission} = require('lib/person');
 const {personSchema, userSchema} = require('lib/schemas'),
       Joi = require('joi');
 
 const router = new Router();
 
-const fsStat = promisify(fs.stat),
-      fsMkdir = promisify(fs.mkdir);
+const stat = promisify(fs.stat),
+      mkdir = promisify(fs.mkdir);
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -49,20 +49,25 @@ const upload = multer({
 async function prepare(ctx, next) {
   // todo: person_key verify, perms
   const {person_key} = ctx.params
-  const uploadDir = path.join(config.get('vueDir'), 'static/upload', person_key)
-  // console.log(uploadDir)
-  let stats;
-  try {
-    stats = await fsStat(uploadDir)
-  } catch(err) {
-    if (err.code === 'ENOENT') {
-      await fsMkdir(uploadDir)
-    } else {
-      ctx.throw(err)
+  const person = await fetchPerson(person_key) // or throw 404
+  if (await checkPermission(ctx.state.user, person)) {
+    const uploadDir = path.join(config.get('vueDir'), 'static/upload', person_key)
+    let stats;
+    try {
+      stats = await stat(uploadDir)
+    } catch(err) {
+      if (err.code === 'ENOENT') {
+        await mkdir(uploadDir)
+      } else {
+        ctx.throw(err)
+      }
     }
+    ctx.req.uploadDir = uploadDir
+    await next()
+  } else {
+    ctx.throw(403, 'upload_is_not_allowed');
   }
-  ctx.req.uploadDir = uploadDir
-  await next()
+
 }
 
 async function uploadPic (ctx) { //POST

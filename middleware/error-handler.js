@@ -14,6 +14,7 @@ async function logError(status, ctx, error){
                     + '\n=====ctx.state\n' + JSON.stringify(ctx.state, null, 2)
                     + '\n=====ctx.req.headers\n' + JSON.stringify(ctx.req.headers, null, 2)
                     + '\n=====error.name\n' + error.name
+                    + '\n=====error.status\n' + error.status
                     + '\n=====error.code\n' + error.code
                     + '\n=====error.message\n' + error.message
                     + '\n=====error.stack\n' + error.stack;
@@ -35,16 +36,25 @@ module.exports = async function (ctx, next) {
         }
       }
     } else if (error.code) {
+      // console.log('type: ' + typeof(error.code))
       switch (error.code) {
-        case 'LIMIT_FILE_SIZE':
+        case 'LIMIT_FILE_SIZE': // koa-multer
           await logError(400, ctx, error);
           ctx.status = 400;
           return ctx.body = {
             error: {
-              message: 'file size exceeded'
+              message: 'file_size_exceeded'
             }
           }
-        }
+        case 404: // ArangoError
+          await logError(404, ctx, error);
+          ctx.status = 404;
+          return ctx.body = {
+            error: {
+              message: 'document_not_found'
+            }
+          }
+      }
     } else {
       switch (error.name) {
         case 'JsonWebTokenError':
@@ -62,16 +72,6 @@ module.exports = async function (ctx, next) {
             error: {
               message: error.message
             }
-          }
-        case 'ArangoError':
-          switch (error.code) {
-            case 404: // document not found
-              ctx.status = 404;
-              return ctx.body = {
-                error: {
-                  message: 'document_not_found'
-                }
-              }
           }
       }
     }

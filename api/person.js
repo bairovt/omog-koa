@@ -62,14 +62,13 @@ async function newPerson(ctx){ //POST
 async function removePerson(ctx) { // key
   const key = ctx.params.person_key;
   const user = ctx.state.user;
-    /* todo: санкции удаления персон:
-     moderator (все кроме тех, которых добавил админ)
-     manager (только тех, кого добавил сам)
-     user (только тех, кого добавил сам)
-     */
-  const personsCollection = db.collection('Persons');
-  const person = await personsCollection.document(key); //person to remove
-  //todo: !!! подтверждение удаления
+  /*
+  todo: санкции удаления персон:
+  moderator (все кроме тех, которых добавил админ)
+  manager (только тех, кого добавил сам)
+  user (только тех, кого добавил сам)
+  */
+  const person = await fetchPerson(key); //person to remove
 
   if (person._id === user._id) ctx.throw(400, 'Запрещено удалять себя'); // запрет удаления персоны самой себя
   if (person.addedBy === user._id || user.isAdmin() || user.hasRoles(['moderator'])) { // проверка санкций
@@ -223,6 +222,5 @@ router
   .patch('/:person_key', updatePerson)    // обработка изменения персоны
   .get('/:person_key/predki-potomki', getPredkiPotomki)    // person page, profile page
   .delete('/:person_key', removePerson);
-  // .get('/:person_key/remove', removePerson);
 
 module.exports = router.routes();
