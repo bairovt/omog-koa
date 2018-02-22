@@ -19,7 +19,7 @@ async function getAllPersons(ctx) {
           FILTER p.repressed != 1
           SORT p.order DESC
           RETURN { _key: p._key, _id: p._id, name: p.name, surname: p.surname, midname: p.midname,
-		        gender: p.gender, maidenName: p.maidenName, birthYear: p.birthYear, image: p.image, about: p.about }`
+		        gender: p.gender, maidenName: p.maidenName, birthYear: p.birthYear, pic: p.pic, about: p.about }`
     ).then(cursor => {return cursor.all()});
   ctx.body = {persons};
 }
@@ -32,7 +32,7 @@ async function getPredkiPotomki(ctx) {
 	  FOR p IN Persons
 	      FILTER p._key == ${person_key}
 	      RETURN merge({ _key: p._key, _id: p._id, name: p.name, surname: p.surname, midname: p.midname,
-	        gender: p.gender, maidenName: p.maidenName, birthYear: p.birthYear, image: p.image, about: p.about },
+	        gender: p.gender, maidenName: p.maidenName, birthYear: p.birthYear, pic: p.pic, about: p.about },
           {
               rod: FIRST(FOR rod IN Rods
                       FILTER p.rod == rod._id
@@ -51,8 +51,7 @@ async function getPredkiPotomki(ctx) {
 }
 
 async function newPerson(ctx){ //POST
-  // console.log(ctx.request.body)
-  // console.log(ctx.request.body.file)
+  // todo:bug не показывает ошибки валидации (schema erros: 400 bad request)
   const {personData, isUser, userData} = ctx.request.body;
   const person = await createPerson(personData, ctx.state.user._id);
   if (isUser) await createUser(person._id, userData);

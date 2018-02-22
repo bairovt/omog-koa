@@ -89,8 +89,8 @@ async function uploadPic (ctx) { //POST
   }
   await gmWritePromise(file.path)
   const Persons = db.collection('Persons');
-  await Persons.update({_key: person_key}, {pic: picFilename});
-  ctx.body = {message: 'pic uploaded'};
+  await Persons.update(person_key, {pic: picFilename});
+  ctx.body = 'pic uploaded'
 }
 
 router

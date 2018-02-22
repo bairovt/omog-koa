@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 const secretKey = require('config').get('secretKeys')[0];
 
 /* authentication middleware */
-
+// todo:bug удалил тестового пользователя t@t.t, не разлогинивал его, он все еще способен загружать данные (кроме своих)
 module.exports = async function (ctx, next){
   // console.log('Auth header: ', ctx.request.header.authorization);
   if ( ['/api/user/signin', '/api/user/signout'].includes(ctx.request.url) ) {
