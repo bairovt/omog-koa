@@ -17,5 +17,5 @@ module.exports = {
       user: 'rod',
       password: 'rod'
     },
-    vueDir: '/home/tumen/vuejs/vrodu.su'
+    uploadDir: '/home/tumen/vuejs/vrodu.su/static/upload'
 };

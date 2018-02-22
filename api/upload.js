@@ -7,6 +7,7 @@ const path = require('path');
 const aql = require('arangojs').aql;
 const Router = require('koa-router');
 const multer = require('koa-multer');
+const gm = require('gm');
 const loGet = require('lodash').get;
 const authorize = require('middleware/authorize');
 const {fetchPerson} = require('lib/fetch-db'),
@@ -24,9 +25,11 @@ const storage = multer.diskStorage({
     cb(null, req.uploadDir)
   },
   filename: function (req, file, cb) {
-    // console.log('file ' + JSON.stringify(file, null, 2))
+    // console.log('file: ' + JSON.stringify(file, null, 2))
     let filename = file.originalname;
-    cb(null, file.fieldname + '_' + Date.now() + filename.slice(filename.lastIndexOf('.')))
+    // filename = file.fieldname + '_' + Date.now() + filename.slice(filename.lastIndexOf('.'))
+    filename = "picimage_" + Date.now() + ".jpg";
+    cb(null, filename)
   }
 })
 function fileFilter (req, file, cb) {
@@ -42,7 +45,7 @@ const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 1024 * 1024 * 8
+    fileSize: 1024 * 1024 * 9
   }
 });
 
@@ -51,7 +54,7 @@ async function prepare(ctx, next) {
   const {person_key} = ctx.params
   const person = await fetchPerson(person_key) // or throw 404
   if (await checkPermission(ctx.state.user, person)) {
-    const uploadDir = path.join(config.get('vueDir'), 'static/upload', person_key)
+    const uploadDir = path.join(config.get('uploadDir'), person_key)
     let stats;
     try {
       stats = await stat(uploadDir)
@@ -67,7 +70,6 @@ async function prepare(ctx, next) {
   } else {
     ctx.throw(403, 'upload_is_not_allowed');
   }
-
 }
 
 async function uploadPic (ctx) { //POST
@@ -75,6 +77,22 @@ async function uploadPic (ctx) { //POST
   // console.log(ctx.request.body.file)
   const {person_key} = ctx.params
   const file = ctx.req.file;
+  function gmWritePromise(imgPath) {
+    return new Promise(function(resolve, reject) {
+      gm(imgPath)
+      .resize(250, 250)
+      .noProfile()
+      .write(path.join(config.get('uploadDir'), person_key, "pic.jpg"), function(err){
+        if(err) {
+          console.log("err")
+          console.error(err)
+          return reject(err)
+        }
+        resolve()
+      })
+    })
+  }
+  await gmWritePromise(file.path)
   ctx.body = file;
 }
 

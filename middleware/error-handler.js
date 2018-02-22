@@ -27,7 +27,7 @@ const root = config.get('root');
 module.exports = async function (ctx, next) {
   try {
     await next();
-  } catch (error) {
+  } catch (error) {    
     if (error.status) {
       ctx.status = error.status;
       return ctx.body = {
