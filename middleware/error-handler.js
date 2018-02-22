@@ -9,25 +9,12 @@ const path = require('path');
 const writeFile = promisify(fs.writeFile)
 // const stat = promisify(fs.stat) // todo: log dir check existance
 
-async function logError(status, ctx, error){
-  const error_log = ctx.request.method + ' ' + ctx.request.href
-                    + '\n=====ctx.state\n' + JSON.stringify(ctx.state, null, 2)
-                    + '\n=====ctx.req.headers\n' + JSON.stringify(ctx.req.headers, null, 2)
-                    + '\n=====error.name\n' + error.name
-                    + '\n=====error.status\n' + error.status
-                    + '\n=====error.code\n' + error.code
-                    + '\n=====error.message\n' + error.message
-                    + '\n=====error.stack\n' + error.stack;
-  await writeFile(path.join(root, 'log', Date.now() + '_' + status + '.error'), error_log);
-  if (process.env.NODE_ENV == 'development') console.error(error_log);
-}
-
 const root = config.get('root');
 /* error handler */
 module.exports = async function (ctx, next) {
   try {
     await next();
-  } catch (error) {    
+  } catch (error) {
     if (error.status) {
       ctx.status = error.status;
       return ctx.body = {
@@ -74,8 +61,21 @@ module.exports = async function (ctx, next) {
             }
           }
       }
-    }
+    }    
     await logError(500, ctx, error);
     ctx.throw(500)
   }
 };
+
+async function logError(status, ctx, error){
+  const error_log = ctx.request.method + ' ' + ctx.request.href
+                    + '\n=====ctx.state\n' + JSON.stringify(ctx.state, null, 2)
+                    + '\n=====ctx.req.headers\n' + JSON.stringify(ctx.req.headers, null, 2)
+                    + '\n=====error.name\n' + error.name
+                    + '\n=====error.status\n' + error.status
+                    + '\n=====error.code\n' + error.code
+                    + '\n=====error.message\n' + error.message
+                    + '\n=====error.stack\n' + error.stack;
+  await writeFile(path.join(root, 'log', Date.now() + '_' + status + '.error'), error_log);
+  if (process.env.NODE_ENV == 'development') console.error(error_log);
+}

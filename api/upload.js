@@ -73,27 +73,24 @@ async function prepare(ctx, next) {
 }
 
 async function uploadPic (ctx) { //POST
-  // console.log(ctx.request.body)
-  // console.log(ctx.request.body.file)
   const {person_key} = ctx.params
+  const picFilename = "pic.jpg"
+  const picPath = path.join(config.get('uploadDir'), person_key, picFilename)
   const file = ctx.req.file;
   function gmWritePromise(imgPath) {
     return new Promise(function(resolve, reject) {
       gm(imgPath)
-      .resize(250, 250)
-      .noProfile()
-      .write(path.join(config.get('uploadDir'), person_key, "pic.jpg"), function(err){
-        if(err) {
-          console.log("err")
-          console.error(err)
-          return reject(err)
-        }
+      .resize(250, 250).noProfile()
+      .write(picPath, function(err){
+        if(err) return reject(err)
         resolve()
       })
     })
   }
   await gmWritePromise(file.path)
-  ctx.body = file;
+  const Persons = db.collection('Persons');
+  await Persons.update({_key: person_key}, {pic: picFilename});
+  ctx.body = {message: 'pic uploaded'};
 }
 
 router
