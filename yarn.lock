@@ -74,11 +74,12 @@ aproba@^1.0.3:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/aproba/-/aproba-1.2.0.tgz#6802e6264efd18c790a1b0d517f0f2627bf2c94a"
 
-arangojs@^6.0.1:
-  version "6.0.1"
-  resolved "https://registry.yarnpkg.com/arangojs/-/arangojs-6.0.1.tgz#fcee562bab001eaa94bb3fd4b8960e0b9cda61f8"
+arangojs@^6.1.1:
+  version "6.1.1"
+  resolved "https://registry.yarnpkg.com/arangojs/-/arangojs-6.1.1.tgz#caf4e402373f2ede1d583e9ee15d37590d695750"
   dependencies:
     es6-error "^4.0.1"
+    linkedlist "^1.0.1"
     multi-part "^2.0.0"
     utf8-length "^0.0.1"
     xhr "^2.4.1"
@@ -1600,6 +1601,10 @@ lcid@^1.0.0:
   resolved "https://registry.yarnpkg.com/lcid/-/lcid-1.0.0.tgz#308accafa0bc483a3867b4b6f2b9506251d1b835"
   dependencies:
     invert-kv "^1.0.0"
+
+linkedlist@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/linkedlist/-/linkedlist-1.0.1.tgz#7b74189bfad6e76367fb5a10f3c36913128b782b"
 
 load-json-file@^2.0.0:
   version "2.0.0"

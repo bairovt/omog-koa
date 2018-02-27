@@ -13,10 +13,16 @@ const {personSchema, userSchema} = require('lib/schemas'),
 const router = new Router();
 
 /* All persons page */
-async function getAllPersons(ctx) {
+async function findPersons(ctx) {
+  let {search} = ctx.params;
+  // persons = db._query(aql`FOR p IN Repressed FILTER REGEX_TEST(p.name, ${name}, true)
+  //                                                   AND REGEX_TEST(p.lifestory, ${lifestory}, true)
+  //                                                   SORT p.name RETURN p`);
   let persons = await db.query(
     aql`FOR p IN Persons
-          FILTER p.repressed != 1
+          FILTER REGEX_TEST(p.name, ${search}, true) OR
+            REGEX_TEST(p.surname, ${search}, true) OR
+            REGEX_TEST(p.midname, ${search}, true)
           SORT p.order DESC
           RETURN { _key: p._key, _id: p._id, name: p.name, surname: p.surname, midname: p.midname,
 		        gender: p.gender, maidenName: p.maidenName, birthYear: p.birthYear, pic: p.pic, about: p.about }`
@@ -106,6 +112,10 @@ async function setRelation(ctx){ // POST
   // only manager can set relation
   if (!user.hasRoles('manager')) ctx.throw(403, 'only manager can set relation');
   let {start_key, end_key, reltype, adopted} = ctx.request.body;
+
+  start_key = start_key.trim()
+  end_key = end_key.trim()
+
   // проверка № 1
   if (start_key === end_key) ctx.throw(400, 'Нельзя человека указать ребенком самого себя');
 
@@ -213,7 +223,7 @@ async function updatePerson(ctx){ //POST
 }
 
 router
-  .get('/all', getAllPersons)
+  .get('/find/:search', findPersons)
   .post('/create', authorize(['manager']), newPerson)
   // .get('/:person_key/fetch', getPerson)
   .post('/set_relation', setRelation)
