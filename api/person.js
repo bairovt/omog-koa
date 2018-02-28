@@ -110,7 +110,7 @@ async function setRelation(ctx){ // POST
   //todo: запрет указания отца/матери, если отец/мать уже есть
   const user = ctx.state.user;
   // only manager can set relation
-  if (!user.hasRoles('manager')) ctx.throw(403, 'only manager can set relation');
+  // if (!user.hasRoles('manager')) ctx.throw(403, 'only manager can set relation');
   let {start_key, end_key, reltype, adopted} = ctx.request.body;
 
   start_key = start_key.trim()
@@ -128,6 +128,13 @@ async function setRelation(ctx){ // POST
   const fromPerson = await fetchPerson(fromKey);
   const toPerson = await fetchPerson(toKey);
 
+  // соединение только своих персон (кроме модератора)
+  if (fromPerson.addedBy === user._id && toPerson.addedBy === user._id || // both persons added by user
+      fromPerson.addedBy === user._id && toPerson._id === user._id || // one person added by user, other is user
+      fromPerson._id === user._id && toPerson.addedBy === user._id || // one person added by user, other is user
+      user.hasRoles('manager')) {}
+  else ctx.throw(403, 'Forbidden to link persons added by different users');
+
   /* todo: заменить проверки №2 и №3 на полный траверс (!adopted) родственников - нельзя в качестве родного родителя или
       ребенка указать кровного родственника (adopted - можно) */
   // проверка № 2
@@ -137,12 +144,6 @@ async function setRelation(ctx){ // POST
   let commonPredki = await findCommonPredki(fromPerson._id, toPerson._id);
   if (commonPredki.length) ctx.throw(400, 'Нельзя в качестве ребенка указать человека с общим предком');
 
-  // todo: соединение только своих персон (кроме админа и модератора)
-  // if (fromPerson.addedBy === user._id && toPerson.addedBy === user._id || // both persons added by user
-  //     fromPerson.addedBy === user._id && toPerson._id === user._id || // one person added by user, other is user
-  //     fromPerson._id === user._id && toPerson.addedBy === user._id || // one person added by user, other is user
-  //     user.isAdmin()) {}
-  // else ctx.throw(403, 'Forbidden: to link Persons added by different users');
   const edgeData = {
     addedBy: user._id
   }
