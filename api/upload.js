@@ -53,7 +53,7 @@ async function prepare(ctx, next) {
   // todo: person_key verify, perms
   const {person_key} = ctx.params
   const person = await fetchPerson(person_key) // or throw 404
-  if (await checkPermission(ctx.state.user, person)) {
+  if (await checkPermission(ctx.state.user, person, {manager: true})) {
     const uploadDir = path.join(config.get('uploadDir'), person_key)
     let stats;
     try {
