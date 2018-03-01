@@ -76,6 +76,7 @@ async function removePerson(ctx) { // key
   const person = await fetchPerson(key); //person to remove
 
   if (person._id === user._id) ctx.throw(400, 'Запрещено удалять себя'); // запрет удаления персоны самой себя
+  
   if (person.addedBy === user._id || user.isAdmin() || user.hasRoles(['moderator'])) { // проверка санкций
     /* правильное удаление Person (вершины графа удалять вместе со связями) */
     const childGraph = db.graph('childGraph');

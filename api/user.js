@@ -8,7 +8,8 @@ const secretKey = require('config').get('secretKeys')[0];
 const {checkPassword} = require('lib/password');
 
 async function signIn(ctx){
-  const {email, password} = ctx.request.body;
+  let {email, password} = ctx.request.body;
+  email = email.toLowerCase()
   const person = await db.query(aql`FOR p IN Persons FILTER p.user.email==${email} RETURN p`).then(cursor => cursor.next());
   if (!person) ctx.throw(401, 'Неверный логин или пароль');
   const passCheck = await checkPassword(password, person.user.passHash);
