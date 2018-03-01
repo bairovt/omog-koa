@@ -25,7 +25,7 @@ async function findPersons(ctx) {
             REGEX_TEST(p.midname, ${search}, true)
           SORT p.order DESC
           RETURN { _key: p._key, _id: p._id, name: p.name, surname: p.surname, midname: p.midname,
-		        gender: p.gender, maidenName: p.maidenName, birthYear: p.birthYear, pic: p.pic, info: p.info }`
+		        gender: p.gender, maidenName: p.maidenName, born: p.born, pic: p.pic, info: p.info }`
     ).then(cursor => {return cursor.all()});
   ctx.body = {persons};
 }
@@ -38,7 +38,7 @@ async function getPredkiPotomki(ctx) {
 	  FOR p IN Persons
 	      FILTER p._key == ${person_key}
 	      RETURN merge({ _key: p._key, _id: p._id, name: p.name, surname: p.surname, midname: p.midname,
-	        gender: p.gender, maidenName: p.maidenName, birthYear: p.birthYear, pic: p.pic, info: p.info },
+	        gender: p.gender, maidenName: p.maidenName, born: p.born, pic: p.pic, info: p.info },
           {
               rod: FIRST(FOR rod IN Rods
                       FILTER p.rod == rod._id
@@ -99,7 +99,7 @@ async function removePerson(ctx) { // key
       surname: person.surname,
       midname: person.midname,
       maidenName: person.maidenName,
-      birthYear: person.birthYear,
+      born: person.born,
       rod: person.rod,
       lifestory: person.lifestory
     }
