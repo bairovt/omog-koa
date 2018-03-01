@@ -25,7 +25,7 @@ async function findPersons(ctx) {
             REGEX_TEST(p.midname, ${search}, true)
           SORT p.order DESC
           RETURN { _key: p._key, _id: p._id, name: p.name, surname: p.surname, midname: p.midname,
-		        gender: p.gender, maidenName: p.maidenName, birthYear: p.birthYear, pic: p.pic, about: p.about }`
+		        gender: p.gender, maidenName: p.maidenName, birthYear: p.birthYear, pic: p.pic, info: p.info }`
     ).then(cursor => {return cursor.all()});
   ctx.body = {persons};
 }
@@ -38,7 +38,7 @@ async function getPredkiPotomki(ctx) {
 	  FOR p IN Persons
 	      FILTER p._key == ${person_key}
 	      RETURN merge({ _key: p._key, _id: p._id, name: p.name, surname: p.surname, midname: p.midname,
-	        gender: p.gender, maidenName: p.maidenName, birthYear: p.birthYear, pic: p.pic, about: p.about },
+	        gender: p.gender, maidenName: p.maidenName, birthYear: p.birthYear, pic: p.pic, info: p.info },
           {
               rod: FIRST(FOR rod IN Rods
                       FILTER p.rod == rod._id
@@ -76,7 +76,7 @@ async function removePerson(ctx) { // key
   const person = await fetchPerson(key); //person to remove
 
   if (person._id === user._id) ctx.throw(400, 'Запрещено удалять себя'); // запрет удаления персоны самой себя
-  
+
   if (person.addedBy === user._id || user.isAdmin() || user.hasRoles(['moderator'])) { // проверка санкций
     /* правильное удаление Person (вершины графа удалять вместе со связями) */
     const childGraph = db.graph('childGraph');
