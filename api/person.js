@@ -38,7 +38,7 @@ async function getPredkiPotomki(ctx) {
 	  FOR p IN Persons
 	      FILTER p._key == ${person_key}
 	      RETURN merge({ _key: p._key, _id: p._id, name: p.name, surname: p.surname, midname: p.midname,
-	        gender: p.gender, maidenName: p.maidenName, born: p.born, pic: p.pic, info: p.info },
+	        gender: p.gender, maidenName: p.maidenName, born: p.born, died: p.died, pic: p.pic, info: p.info },
           {
               rod: FIRST(FOR rod IN Rods
                       FILTER p.rod == rod._id
