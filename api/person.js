@@ -64,7 +64,7 @@ async function newPerson(ctx){ //POST
   ctx.body = {newPersonKey: person._key};
 }
 
-async function removePerson(ctx) { // key
+async function deletePerson(ctx) { // key
   const key = ctx.params.person_key;
   const user = ctx.state.user;
   /*
@@ -232,6 +232,6 @@ router
   .post('/:person_key/add/:reltype', addPerson)    // обработка добавления персоны
   .patch('/:person_key', updatePerson)    // обработка изменения персоны
   .get('/:person_key/predki-potomki', getPredkiPotomki)    // person page, profile page
-  .delete('/:person_key', removePerson);
+  .delete('/:person_key', deletePerson);
 
 module.exports = router.routes();
