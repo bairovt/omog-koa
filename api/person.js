@@ -4,7 +4,8 @@ const aql = require('arangojs').aql;
 const Router = require('koa-router');
 const loGet = require('lodash').get;
 const authorize = require('middleware/authorize');
-const {fetchPerson, fetchPredkiPotomki, fetchPredkiPotomkiIdUnion, findCommonPredki, findClosestUsers} = require('lib/fetch-db'),
+const {fetchPerson, fetchPredkiPotomki, fetchPredkiPotomkiIdUnion, findCommonPredki,
+      findClosestUsers, fetchPersonWithClosest} = require('lib/fetch-db'),
       {createChildEdge, createPerson, createUser, checkPermission} = require('lib/person');
 const {personSchema, userSchema} = require('lib/schemas'),
       Joi = require('joi');
@@ -50,7 +51,7 @@ async function getPredkiPotomki(ctx) {
   ).then(cursor => cursor.next());
   if (person === undefined) ctx.throw(404, 'person not found');
   // проверка прав на изменение персоны (добавление, изменение)
-  person.editable = await checkPermission(ctx.state.user, person, {manager: true});
+  person.editable = await checkPermission(ctx.state.user, person, {manager: true}); // todoo
   // находим предков и потомков персоны
   let {predki, potomki} = await fetchPredkiPotomki(person._id);
   ctx.body = {person, predki, potomki}; //gens, gensCount
@@ -65,27 +66,32 @@ async function newPerson(ctx){ //POST
 }
 
 async function deletePerson(ctx) { // key
+  // todoo: do not realy delete person, mark as deleted instead
   const key = ctx.params.person_key;
   const user = ctx.state.user;
-  /*
-  todo: санкции удаления персон:
-  moderator (все кроме тех, которых добавил админ)
-  manager (только тех, кого добавил сам)
-  user (только тех, кого добавил сам)
-  */
-  const person = await fetchPerson(key); //person to remove
+
+  /* todo: санкции удаления персон:
+  manager (все)
+  user (только тех, кого добавил сам)*/
+
+  const personAndClosest = await fetchPersonWithClosest(key); //person to remove
+
+  if (personAndClosest.length > 2) ctx.throw(400, 'Запрещено удалять персону с более чем 1 связью');
+
+  const person = personAndClosest[0]
+  const closest = personAndClosest[1]
 
   if (person._id === user._id) ctx.throw(400, 'Запрещено удалять себя'); // запрет удаления персоны самой себя
 
-  if (person.addedBy === user._id || user.isAdmin() || user.hasRoles(['moderator'])) { // проверка санкций
-    /* правильное удаление Person (вершины графа удалять вместе со связями) */
-    const childGraph = db.graph('childGraph');
-    const vertexCollection = childGraph.vertexCollection('Persons');
-    await vertexCollection.remove(key); // todo: test проверка несуществующего ключа
-    ctx.body = {message: 'Person removed'};
-  } else {
-    ctx.throw(403, 'Нет санкций на удаление персоны');
-  }
+  if (person.addedBy === user._id || user.isAdmin() || user.hasRoles(['manager'])) {} // проверка санкций
+  else ctx.throw(403, 'Нет санкций на удаление персоны');
+
+  /* правильное удаление Person (вершины графа удалять вместе со связями) */
+  const childGraph = db.graph('childGraph');
+  const vertexCollection = childGraph.vertexCollection('Persons');
+  await vertexCollection.remove(key); // todo: test проверка несуществующего ключа
+  // ctx.body = {message: 'Person removed'};
+  ctx.body = {closest: closest._key};
 }
 
 /*async function getPerson(ctx) {
