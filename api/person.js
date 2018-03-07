@@ -90,8 +90,9 @@ async function deletePerson(ctx) { // key
   const childGraph = db.graph('childGraph');
   const vertexCollection = childGraph.vertexCollection('Persons');
   await vertexCollection.remove(key); // todo: test проверка несуществующего ключа
-  // ctx.body = {message: 'Person removed'};
-  ctx.body = {closest: closest._key};
+
+  if (closest) ctx.body = {redirKey: closest._key}
+  else ctx.body = {redirKey: user._key}  
 }
 
 /*async function getPerson(ctx) {
