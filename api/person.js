@@ -92,7 +92,7 @@ async function deletePerson(ctx) { // key
   await vertexCollection.remove(key); // todo: test проверка несуществующего ключа
 
   if (closest) ctx.body = {redirKey: closest._key}
-  else ctx.body = {redirKey: user._key}  
+  else ctx.body = {redirKey: user._key}
 }
 
 /*async function getPerson(ctx) {
@@ -112,55 +112,6 @@ async function deletePerson(ctx) { // key
     }
   }
 }*/
-
-async function setRelation(ctx){ // POST
-  //todo: запрос на соединение с чужой персоной
-  //todo: запрет указания отца/матери, если отец/мать уже есть
-  const user = ctx.state.user;
-  // only manager can set relation
-  // if (!user.hasRoles('manager')) ctx.throw(403, 'only manager can set relation');
-  let {start_key, end_key, reltype, adopted} = ctx.request.body;
-
-  start_key = start_key.trim()
-  end_key = end_key.trim()
-
-  // проверка № 1
-  if (start_key === end_key) ctx.throw(400, 'Нельзя человека указать ребенком самого себя');
-
-  let fromKey = start_key, toKey = end_key; // if reltype: 'child'
-  if (reltype === 'parent') { // if reltype is 'parent': reverse direction
-    fromKey = end_key;
-    toKey = start_key;
-  }
-  // ключи должны быть реальными, иначе 404
-  const fromPerson = await fetchPerson(fromKey);
-  const toPerson = await fetchPerson(toKey);
-
-  // соединение только своих персон (кроме модератора)
-  if (fromPerson.addedBy === user._id && toPerson.addedBy === user._id || // both persons added by user
-      fromPerson.addedBy === user._id && toPerson._id === user._id || // one person added by user, other is user
-      fromPerson._id === user._id && toPerson.addedBy === user._id || // one person added by user, other is user
-      user.hasRoles('manager')) {}
-  else ctx.throw(403, 'Forbidden to link persons added by different users');
-
-  /* todo: заменить проверки №2 и №3 на полный траверс (!adopted) родственников - нельзя в качестве родного родителя или
-      ребенка указать кровного родственника (adopted - можно) */
-  // проверка № 2
-  let predkiAndPotomki = await fetchPredkiPotomkiIdUnion(fromPerson._id);
-  if (predkiAndPotomki.includes(toPerson._id)) ctx.throw(400, 'Нельзя в качестве ребенка указать предка или потомка');
-  // проверка № 3
-  // let commonPredki = await findCommonPredki(fromPerson._id, toPerson._id);
-  // if (commonPredki.length) ctx.throw(400, 'Нельзя в качестве ребенка указать человека с общим предком');
-
-  const edgeData = {
-    addedBy: user._id
-  }
-  if (adopted) edgeData.adopted = true
-  await createChildEdge(edgeData, fromPerson._id, toPerson._id);
-  ctx.body = {
-    location: '/person/'+start_key
-  }
-}
 
 async function addPerson(ctx){ //POST
   /** person_key - ключ существующего person, к которому добавляем нового person
@@ -235,7 +186,6 @@ router
   .get('/find/:search', findPersons)
   .post('/create', authorize(['manager']), newPerson)
   // .get('/:person_key/fetch', getPerson)
-  .post('/set_relation', setRelation)
   .post('/:person_key/add/:reltype', addPerson)    // обработка добавления персоны
   .patch('/:person_key', updatePerson)    // обработка изменения персоны
   .get('/:person_key/predki-potomki', getPredkiPotomki)    // person page, profile page

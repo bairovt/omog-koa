@@ -57,6 +57,7 @@ router
     .use('/api/user', require('api/user'))
     .use('/api/rod', require('api/rod'))
     .use('/api/person', require('api/person'))
+    .use('/api/child', require('api/child'))        // operate with child edges
     .use('/api/upload', require('api/upload'));
     // .use('/api/messages', require('routes/api/messages'));
 app.use(router.routes());
