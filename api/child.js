@@ -57,13 +57,39 @@ async function setRelation(ctx){ // POST
   }
   if (adopted) edgeData.adopted = true
   await createChildEdge(edgeData, fromPerson._id, toPerson._id);
-  ctx.body = {
     location: '/person/'+start_key
+    ctx.body = {
   }
+}
+
+async function deleteChildEdge (ctx) {
+  const {_key} = ctx.params;
+  const user = ctx.state.user
+
+  const childColl = db.collection('child');
+  const edge = await childColl.document(_key);
+
+  if (edge.addedBy === user._id || user.hasRoles(['manager'])) {} // continue
+  else ctx.throw(403, 'нет санкций на удаление связи')
+
+  const now = new Date()
+  const parent_id = await db.query(
+    aql`FOR e IN child
+          FILTER e._key == ${_key}
+          UPDATE ${_key} WITH {
+            del: {
+              by: ${user._id},
+              time: ${now}
+            }
+          } IN child
+          RETURN e._from
+    `).then(cursor => cursor.next())
+
+  ctx.body = {parent_key: parent_id.split('/')[1]}
 }
 
 router
   .post('/set_relation', setRelation)
-  // .delete('/:childEdge_key', deletePerson);
+  .delete('/:_key', deleteChildEdge);
 
 module.exports = router.routes();
