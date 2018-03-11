@@ -26,7 +26,8 @@ async function findPersons(ctx) {
             REGEX_TEST(p.midname, ${search}, true)
           SORT p.order DESC
           RETURN { _key: p._key, _id: p._id, name: p.name, surname: p.surname, midname: p.midname,
-		        gender: p.gender, maidenName: p.maidenName, born: p.born, pic: p.pic, info: p.info }`
+		        gender: p.gender, maidenName: p.maidenName, born: p.born, pic: p.pic, info: p.info,
+            addedBy: p.addedBy }`
     ).then(cursor => {return cursor.all()});
   ctx.body = {persons};
 }
@@ -63,36 +64,6 @@ async function newPerson(ctx){ //POST
   const person = await createPerson(personData, ctx.state.user._id);
   if (isUser) await createUser(person._id, userData);
   ctx.body = {newPersonKey: person._key};
-}
-
-async function deletePerson(ctx) { // key
-  // todoo: do not realy delete person, mark as deleted instead
-  const key = ctx.params.person_key;
-  const user = ctx.state.user;
-
-  /* todo: санкции удаления персон:
-  manager (все)
-  user (только тех, кого добавил сам)*/
-
-  const personAndClosest = await fetchPersonWithClosest(key); //person to remove
-
-  if (personAndClosest.length > 2) ctx.throw(400, 'Запрещено удалять персону с более чем 1 связью');
-
-  const person = personAndClosest[0]
-  const closest = personAndClosest[1]
-
-  if (person._id === user._id) ctx.throw(400, 'Запрещено удалять себя'); // запрет удаления персоны самой себя
-
-  if (person.addedBy === user._id || user.isAdmin() || user.hasRoles(['manager'])) {} // проверка санкций
-  else ctx.throw(403, 'Нет санкций на удаление персоны');
-
-  /* правильное удаление Person (вершины графа удалять вместе со связями) */
-  const childGraph = db.graph('childGraph');
-  const vertexCollection = childGraph.vertexCollection('Persons');
-  await vertexCollection.remove(key); // todo: test проверка несуществующего ключа
-
-  if (closest) ctx.body = {redirKey: closest._key}
-  else ctx.body = {redirKey: user._key}
 }
 
 /*async function getPerson(ctx) {
@@ -180,6 +151,36 @@ async function updatePerson(ctx){ //POST
       message: "Нет санкций на изменение персоны"
     };
   }
+}
+
+async function deletePerson(ctx) { // key
+  // todoo: do not realy delete person, mark as deleted instead
+  const key = ctx.params.person_key;
+  const user = ctx.state.user;
+
+  /* todo: санкции удаления персон:
+  manager (все)
+  user (только тех, кого добавил сам)*/
+
+  const personAndClosest = await fetchPersonWithClosest(key); //person to remove
+
+  if (personAndClosest.length > 2) ctx.throw(400, 'Запрещено удалять персону с более чем 1 связью');
+
+  const person = personAndClosest[0]
+  const closest = personAndClosest[1]
+
+  if (person._id === user._id) ctx.throw(400, 'Запрещено удалять себя'); // запрет удаления персоны самой себя
+
+  if (person.addedBy === user._id || user.isAdmin() || user.hasRoles(['manager'])) {} // проверка санкций
+  else ctx.throw(403, 'Нет санкций на удаление персоны');
+
+  /* правильное удаление Person (вершины графа удалять вместе со связями) */
+  const childGraph = db.graph('childGraph');
+  const vertexCollection = childGraph.vertexCollection('Persons');
+  await vertexCollection.remove(key); // todo: test проверка несуществующего ключа
+
+  if (closest) ctx.body = {redirKey: closest._key}
+  else ctx.body = {redirKey: user._key}
 }
 
 router
