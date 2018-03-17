@@ -5,7 +5,7 @@ const Router = require('koa-router');
 const loGet = require('lodash').get;
 const authorize = require('middleware/authorize');
 const {fetchPerson, fetchPredkiPotomki, fetchPredkiPotomkiIdUnion, findCommonPredki,
-      findClosestUsers, fetchPersonWithClosest} = require('lib/fetch-db'),
+      findClosestUsers, fetchPersonWithClosest, fetchProfile} = require('lib/fetch-db'),
       {createChildEdge, createPerson, createUser, checkPermission} = require('lib/person');
 const {personSchema, userSchema} = require('lib/schemas'),
       Joi = require('joi');
@@ -16,9 +16,7 @@ const router = new Router();
 /* All persons page */
 async function findPersons(ctx) {
   let {search} = ctx.params;
-  // persons = db._query(aql`FOR p IN Repressed FILTER REGEX_TEST(p.name, ${name}, true)
-  //                                                   AND REGEX_TEST(p.lifestory, ${lifestory}, true)
-  //                                                   SORT p.name RETURN p`);
+
   let persons = await db.query(
     aql`FOR p IN Persons
           FILTER REGEX_TEST(p.name, ${search}, true) OR
@@ -35,30 +33,23 @@ async function findPersons(ctx) {
 /* Person page */
 async function getPredkiPotomki(ctx) {
   let {person_key} = ctx.params;
-  // извлечь персону с родом и добавившим
-  let person = await db.query(aql`
-	  FOR p IN Persons
-	      FILTER p._key == ${person_key}
-	      RETURN merge({ _key: p._key, _id: p._id, name: p.name, surname: p.surname, midname: p.midname,
-	        gender: p.gender, maidenName: p.maidenName, born: p.born, died: p.died, pic: p.pic, info: p.info },
-          {
-              rod: FIRST(FOR rod IN Rods
-                      FILTER p.rod == rod._id
-                      RETURN {name: rod.name, _key: rod._key}),
-              addedBy: FIRST(FOR added IN Persons
-                          FILTER added._id == p.addedBy
-                          RETURN {name: added.name, surname: added.surname, _key: added._key})
-          })`
-  ).then(cursor => cursor.next());
-  if (person === undefined) ctx.throw(404, 'person not found');
-  // проверка прав на изменение персоны (добавление, изменение)
+  const person = await fetchProfile(person_key)
   person.editable = await checkPermission(ctx.state.user, person, {manager: true}); // todoo
+  // проверка прав на изменение персоны (добавление, изменение)
   // находим предков и потомков персоны
   let {predki, potomki} = await fetchPredkiPotomki(person._id);
   ctx.body = {person, predki, potomki}; //gens, gensCount
 }
 
-async function newPerson(ctx){ //POST
+async function getProfile(ctx) {
+  const {person_key} = ctx.params
+  const profile = await fetchProfile(person_key);
+  // проверка прав на изменение персоны (добавление, изменение)
+  profile.editable = await checkPermission(ctx.state.user, profile, {manager: true}); // todoo
+  ctx.body = {profile}
+}
+
+async function newPerson(ctx) { //POST
   // todo:bug не показывает ошибки валидации (schema erros: 400 bad request)
   const {personData, isUser, userData} = ctx.request.body;
   const person = await createPerson(personData, ctx.state.user._id);
@@ -66,25 +57,7 @@ async function newPerson(ctx){ //POST
   ctx.body = {newPersonKey: person._key};
 }
 
-/*async function getPerson(ctx) {
-  // used in update person page
-  const person = await fetchPerson(ctx.params.person_key);
-  ctx.body = {
-    person: {
-      _key: person._key,
-      gender: person.gender,
-      name: person.name,
-      surname: person.surname,
-      midname: person.midname,
-      maidenName: person.maidenName,
-      born: person.born,
-      rod: person.rod,
-      lifestory: person.lifestory
-    }
-  }
-}*/
-
-async function addPerson(ctx){ //POST
+async function addPerson(ctx) { //POST
   /** person_key - ключ существующего person, к которому добавляем нового person
    reltype: "father", "mother", "son", "daughter" */
   const {person_key, reltype} = ctx.params;
@@ -120,7 +93,7 @@ async function addPerson(ctx){ //POST
   // todo???: verification: does person already have mother or father
 }
 
-async function updatePerson(ctx){ //POST
+async function updatePerson(ctx) { //POST
   // todo: история изменений
   const {person_key} = ctx.params;
   const person = await fetchPerson(person_key);
@@ -186,7 +159,7 @@ async function deletePerson(ctx) { // key
 router
   .get('/find/:search', findPersons)
   .post('/create', authorize(['manager']), newPerson)
-  // .get('/:person_key/fetch', getPerson)
+  .get('/profile/:person_key', getProfile)
   .post('/:person_key/add/:reltype', addPerson)    // обработка добавления персоны
   .patch('/:person_key', updatePerson)    // обработка изменения персоны
   .get('/:person_key/predki-potomki', getPredkiPotomki)    // person page, profile page
