@@ -14,8 +14,8 @@ module.exports = {
     corsOrigin: 'http://localhost:8080',
     db: {
       URL: 'http://127.0.0.1:8529',
-      user: 'rod',
-      password: 'rod'
+      user: 'rod_base_user',
+      password: 'rod_base_pass'
     },
     uploadDir: '/home/tumen/vuejs/vrodu.su/static/upload'
 };
