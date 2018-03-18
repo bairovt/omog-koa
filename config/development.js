@@ -8,5 +8,6 @@ module.exports = {
       user: 'rod',
       password: 'rod'
     },
-    uploadDir: 'd:\\vuejs\\vrodu.su\\static\\upload\\'
+    // uploadDir: 'd:\\vuejs\\vrodu.su\\static\\upload\\'
+    uploadDir: '/home/tumen/vuejs/vrodu.su/static/upload'
 };

@@ -4,4 +4,5 @@ public/
 .idea/
 npm-debug.log
 config/production.js
+config/development.js
 log/
