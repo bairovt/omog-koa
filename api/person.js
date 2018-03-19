@@ -108,7 +108,7 @@ async function updatePerson(ctx) { //POST
       console.log(result.error.details, result.value);
       ctx.status = 400;
       ctx.body = {
-        message: result.error.message
+        error: result.error.message
       }
     } else {
       let validPersonData = result.value;
@@ -161,7 +161,7 @@ router
   .post('/create', authorize(['manager']), newPerson)
   .get('/profile/:person_key', getProfile)
   .post('/:person_key/add/:reltype', addPerson)    // обработка добавления персоны
-  .patch('/:person_key', updatePerson)    // обработка изменения персоны
+  .post('/update/:person_key', updatePerson)    // обработка изменения персоны
   .get('/:person_key/predki-potomki', getPredkiPotomki)    // person page, profile page
   .delete('/:person_key', deletePerson);
 
