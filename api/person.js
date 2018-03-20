@@ -86,7 +86,7 @@ async function addPerson(ctx) { //POST
     ctx.body = {newPersonKey: newPerson._key};
   } else {
     ctx.throw(403, "Нет санкций на добавление персоны");
-  }  
+  }
 }
 
 async function updatePerson(ctx) { //POST
@@ -94,10 +94,8 @@ async function updatePerson(ctx) { //POST
   const {person_key} = ctx.params;
   const person = await fetchPerson(person_key);
   const user = ctx.state.user;
-  // проверка санкций: Изменять персону может ближайший родственник-юзер персоны (самый близкий - сам person)
-  // let closestUsers = await findClosestUsers(person._id); // юзеры, которые могут изменять person
-  // if (closestUsers.some(el => user._id === el._id))  // если user является ближайшим родственником-юзером
-  if ( await checkPermission(user, person, {manager: true}) )
+  // проверка санкций
+  if ( await checkPermission(user, person._id, {manager: true}) )
   {
     let result = Joi.validate(ctx.request.body.person, personSchema, {stripUnknown: true});
     if (result.error) {
@@ -108,8 +106,11 @@ async function updatePerson(ctx) { //POST
       }
     } else {
       let validPersonData = result.value;
-      validPersonData.updated = new Date();
-      await db.collection('Persons').update(person._id, validPersonData);
+      validPersonData.updated = {
+        by: user._id,
+        time: new Date()
+      }
+      await db.collection('Persons').update(person._id, validPersonData, {keepNull: false});
       ctx.body = {
         message: 'person updated'
       };
