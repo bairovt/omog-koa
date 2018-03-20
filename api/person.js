@@ -45,7 +45,7 @@ async function getProfile(ctx) {
   const {person_key} = ctx.params
   const profile = await fetchProfile(person_key);
   // проверка прав на изменение персоны (добавление, изменение)
-  profile.editable = await checkPermission(ctx.state.user, profile, {manager: true}); // todoo
+  profile.editable = await checkPermission(ctx.state.user, profile._id, {manager: true}); // todoo
   ctx.body = {profile}
 }
 
@@ -65,13 +65,10 @@ async function addPerson(ctx) { //POST
   const user = ctx.state.user;
   const person = await fetchPerson(person_key);   // person к которому добавляем
   /* проверка санкций на добавление родителя или ребенка к персоне
-      #0: можно добавлять к себе: person._id === user._id
       #1: может добавить ближайший родственник-юзер персоны (самый близкий - сам person)
-      #2: тот кто добавил персону (addedBy): person.addedBy === user._id
+      #2: ??? тот кто добавил персону (addedBy): person.addedBy === user._id
       #3: manager */
-  let closestUsers = await findClosestUsers(person._id); // юзеры, которые могут изменять person
-  if (person._id === user._id || person.addedBy === user._id ||
-      user.hasRoles("manager")|| closestUsers.some(el => user._id === el._id))
+  if (await checkPermission(user, person._id, {manager: true}))
   {
     const newPerson = await createPerson(personData, ctx.state.user._id);
     // create child edge
@@ -89,8 +86,7 @@ async function addPerson(ctx) { //POST
     ctx.body = {newPersonKey: newPerson._key};
   } else {
     ctx.throw(403, "Нет санкций на добавление персоны");
-  }
-  // todo???: verification: does person already have mother or father
+  }  
 }
 
 async function updatePerson(ctx) { //POST
