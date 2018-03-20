@@ -32,7 +32,7 @@
   },
   "devDependencies": {
     "koa-logger": "^3.0.0",
-    "nodemon": "^1.15.1"
+    "nodemon": "^1.17.2"
   },
   "moduleRoots": [
     "/home/tumen/nodejs/rod.so"
