@@ -27,8 +27,8 @@ async function setRelation(ctx){ // POST
   // проверка № 1
   if (start_key === end_key) ctx.throw(400, 'Нельзя человека указать ребенком самого себя');
 
-  let fromKey = start_key, toKey = end_key; // if reltype: 'child'
-  if (reltype === 'parent') { // if reltype is 'parent': reverse direction
+  let fromKey = start_key, toKey = end_key; // if reltype: 'parent'
+  if (reltype === 'child') { // if reltype is 'child': reverse direction
     fromKey = end_key;
     toKey = start_key;
   }
@@ -45,6 +45,7 @@ async function setRelation(ctx){ // POST
 
   /* todo: заменить проверки №2 и №3 на полный траверс (!adopted) родственников - нельзя в качестве родного родителя или
       ребенка указать кровного родственника (adopted - можно) */
+  // todo: отработать случай когда связь существует, но была удалена (свойство del) (ArangoError: unique constraint violated - in index 13524179 of type hash over ["_from","_to"]...)
   // проверка № 2
   let predkiAndPotomki = await fetchPredkiPotomkiIdUnion(fromPerson._id);
   if (predkiAndPotomki.includes(toPerson._id)) ctx.throw(400, 'Нельзя в качестве ребенка указать предка или потомка');
