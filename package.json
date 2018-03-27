@@ -26,13 +26,13 @@
     "koa-static": "^3.0.0",
     "lodash": "^4.17.4",
     "md5": "^2.2.1",
+    "nodemailer": "^4.6.3",
     "socket.io": "^2.0.3",
     "socketio-jwt": "^4.5.0",
     "transliteration": "^1.1.16"
   },
   "devDependencies": {
-    "koa-logger": "^3.0.0",
-    "nodemon": "^1.17.2"
+    "koa-logger": "^3.0.0"
   },
   "moduleRoots": [
     "/home/tumen/nodejs/rod.so"

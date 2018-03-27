@@ -1,13 +1,13 @@
 'use strict';
-const db = require('lib/arangodb');
+const db = require('../lib/arangodb');
 const aql = require('arangojs').aql;
 const Router = require('koa-router');
 const loGet = require('lodash').get;
-const authorize = require('middleware/authorize');
+const authorize = require('../middleware/authorize');
 const {fetchPerson, fetchPredkiPotomki, fetchPredkiPotomkiIdUnion, findCommonPredki,
-      findClosestUsers, fetchPersonWithClosest, fetchProfile} = require('lib/fetch-db'),
-      {createChildEdge, createPerson, createUser, checkPermission} = require('lib/person');
-const {personSchema, userSchema} = require('lib/schemas'),
+      findClosestUsers, fetchPersonWithClosest, fetchProfile} = require('../lib/fetch-db'),
+      {createChildEdge, createPerson, createUser, checkPermission} = require('../lib/person');
+const {personSchema, userSchema} = require('../lib/schemas'),
       Joi = require('joi');
 
 
@@ -100,10 +100,8 @@ async function updatePerson(ctx) { //POST
     let result = Joi.validate(ctx.request.body.person, personSchema, {stripUnknown: true});
     if (result.error) {
       console.log(result.error.details, result.value);
-      ctx.status = 400;
-      ctx.body = {
-        error: result.error.message
-      }
+      ctx.status = 400;         // todo: доп. инфо ошибок валидации
+      ctx.body = {errorMsg: result.error.message}
     } else {
       let validPersonData = result.value;
       validPersonData.updated = {
@@ -111,15 +109,10 @@ async function updatePerson(ctx) { //POST
         time: new Date()
       }
       await db.collection('Persons').update(person._id, validPersonData, {keepNull: false});
-      ctx.body = {
-        message: 'person updated'
-      };
+      ctx.body = {};
     }
   } else {
-    ctx.status = 403;
-    ctx.body = {
-      message: "Нет санкций на изменение персоны"
-    };
+    ctx.throw(403, "Нет санкций на изменение персоны")
   }
 }
 

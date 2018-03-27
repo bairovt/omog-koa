@@ -3,7 +3,6 @@ const db = require('lib/arangodb');
 const aql = require('arangojs').aql;
 const Router = require('koa-router');
 const loGet = require('lodash').get;
-const authorize = require('middleware/authorize');
 const {fetchPerson, fetchPredkiPotomki, fetchPredkiPotomkiIdUnion, findCommonPredki,
       findClosestUsers, fetchPersonWithClosest} = require('lib/fetch-db'),
       {createChildEdge, createPerson, createUser, checkPermission} = require('lib/person');

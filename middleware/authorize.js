@@ -14,11 +14,7 @@ module.exports = function (allowedRoles){
 
 		if (authorized) return next();
 		else {
-			// return ctx.throw(403, 'Forbidden'); // почему-то не работает
-      ctx.status = 403;
-      ctx.body = {
-        message: 'Forbidden'
-      };
+			return ctx.throw(403, 'Access denied for user');      
     }
 	}
 };

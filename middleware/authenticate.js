@@ -16,13 +16,8 @@ module.exports = async function (ctx, next){
     const authToken = authHeader.split(' ').pop();
     const profile = jwt.verify(authToken, secretKey); //may throw JsonWebTokenError,
     ctx.state.user = new User(profile); // set user state of the request
-    return await next();
+    return await next()
   } else {
-	  ctx.status = 401;
-	  return ctx.body = {
-      error: {
-        message: 'Empty authorization header'
-      }
-	  };
+    return ctx.throw(401, 'Empty authorization header')	  
   }
-};
+}
