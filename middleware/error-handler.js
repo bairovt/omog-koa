@@ -17,53 +17,39 @@ module.exports = async function (ctx, next) {
   } catch (error) {
     if (error.status) {
       ctx.status = error.status;
-      return ctx.body = {
-        error: {
-          message: error.message
-        }
+      return ctx.body = {errorMsg: error.message}
+    }
+    else if (error.name) {
+      switch (error.name) {
+        case 'JsonWebTokenError':
+          await logError(401, ctx, error);
+          ctx.status = 401;
+          return ctx.body = {errorMsg: 'invalid_token'}
+        case 'ValidationError':
+          await logError(400, ctx, error);
+          ctx.status = 400;
+          return ctx.body = {errorMsg: error.message}
+        case 'ArangoError':
+          switch (error.code) {
+            case 404: // ArangoError
+              await logError(404, ctx, error);
+              ctx.status = 404;
+              return ctx.body = {errorMsg: 'db: document not found'}
+          }
       }
-    } else if (error.code) {
+    }
+    else if (error.code) {
       // console.log('type: ' + typeof(error.code))
       switch (error.code) {
         case 'LIMIT_FILE_SIZE': // koa-multer
           await logError(400, ctx, error);
           ctx.status = 400;
-          return ctx.body = {
-            error: {
-              message: 'file_size_exceeded'
-            }
-          }
-        case 404: // ArangoError
-          await logError(404, ctx, error);
-          ctx.status = 404;
-          return ctx.body = {
-            error: {
-              message: 'document_not_found'
-            }
-          }
+          return ctx.body = {errorMsg: 'file_size_exceeded'}
       }
-    } else {
-      switch (error.name) {
-        case 'JsonWebTokenError':
-          await logError(401, ctx, error);
-          ctx.status = 401;
-          return ctx.body = {
-            error: {
-              message: 'invalid_token'
-            }
-          }
-        case 'ValidationError':
-          await logError(400, ctx, error);
-          ctx.status = 400;
-          return ctx.body = {
-            error: {
-              message: error.message
-            }
-          }
-      }
-    }    
+    }
     await logError(500, ctx, error);
-    ctx.throw(500)
+    ctx.status = 500;
+    return ctx.body = {errorMsg: 'server_error'}
   }
 };
 
