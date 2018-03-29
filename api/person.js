@@ -49,7 +49,7 @@ async function getProfile(ctx) {
   ctx.body = {profile}
 }
 
-async function newPerson(ctx) { //POST
+async function createNewPerson(ctx) { //POST
   // todo:bug не показывает ошибки валидации (schema erros: 400 bad request)
   const {personData, isUser, userData} = ctx.request.body;
   const person = await createPerson(personData, ctx.state.user._id);
@@ -148,7 +148,7 @@ async function deletePerson(ctx) { // key
 
 router
   .get('/find/:search', findPersons)
-  .post('/create', authorize(['manager']), newPerson)
+  .post('/create', authorize(['manager']), createNewPerson)
   .get('/profile/:person_key', getProfile)
   .post('/:person_key/add/:reltype', addPerson)    // обработка добавления персоны
   .post('/update/:person_key', updatePerson)    // обработка изменения персоны
