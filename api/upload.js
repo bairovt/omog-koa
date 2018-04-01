@@ -1,5 +1,5 @@
 'use strict';
-const db = require('lib/arangodb');
+const db = require('../lib/arangodb');
 const config = require('config');
 const promisify = require('util').promisify;
 const fs = require('fs');
@@ -9,10 +9,10 @@ const Router = require('koa-router');
 const multer = require('koa-multer');
 const gm = require('gm');
 const loGet = require('lodash').get;
-const authorize = require('middleware/authorize');
-const {fetchPerson} = require('lib/fetch-db'),
-      {checkPermission} = require('lib/person');
-const {personSchema, userSchema} = require('lib/schemas'),
+const authorize = require('../middleware/authorize');
+const {fetchPerson} = require('../lib/fetch-db'),
+      {checkPermission} = require('../lib/person');
+const {personSchema, userSchema} = require('../lib/schemas'),
       Joi = require('joi');
 
 const router = new Router();

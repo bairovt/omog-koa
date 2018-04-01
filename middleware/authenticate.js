@@ -1,6 +1,6 @@
 'use strict';
-const db = require('lib/arangodb');
-const User = require('models/User');
+const db = require('../lib/arangodb');
+const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const secretKey = require('config').get('secretKeys')[0];
 

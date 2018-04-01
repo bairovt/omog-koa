@@ -4,7 +4,7 @@
  checks if a user's role is allowed (roles)
  all forms should use a POST method */
 
-module.exports = function (allowedRoles){
+module.exports = function (allowedRoles){ // array
 	return async function (ctx, next) {
 		let authorized = false;
 		const user = ctx.state.user;

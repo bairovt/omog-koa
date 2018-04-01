@@ -1,12 +1,12 @@
 'use strict';
-const db = require('lib/arangodb');
+const db = require('../lib/arangodb');
 const aql = require('arangojs').aql;
 const Router = require('koa-router');
 const loGet = require('lodash').get;
 const {fetchPerson, fetchPredkiPotomki, fetchPredkiPotomkiIdUnion, findCommonPredki,
-      findClosestUsers, fetchPersonWithClosest} = require('lib/fetch-db'),
-      {createChildEdge, createPerson, createUser, checkPermission} = require('lib/person');
-const {personSchema, userSchema} = require('lib/schemas'),
+      findClosestUsers, fetchPersonWithClosest} = require('../lib/fetch-db'),
+      {createChildEdge, createPerson, createUser, checkPermission} = require('../lib/person');
+const {personSchema, userSchema} = require('../lib/schemas'),
       Joi = require('joi');
 
 
