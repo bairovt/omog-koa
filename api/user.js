@@ -1,12 +1,16 @@
 'use strict';
 
-const db = require('lib/arangodb');
+const db = require('../lib/arangodb');
 const aql = require('arangojs').aql;
 const router = require('koa-router')();
 const jwt = require('jsonwebtoken');
+const Joi = require('joi');
 const secretKey = require('config').get('secretKeys')[0];
-const {checkPassword} = require('lib/password');
-const transporter = require('lib/transporter')
+const {checkPassword} = require('../lib/password');
+const transporter = require('../lib/transporter');
+const authorize = require('../middleware/authorize');
+const {emailSchema} = require('../lib/schemas');
+const {fetchPerson} = require('../lib/fetch-db');
 
 async function signIn(ctx){
   let {email, password} = ctx.request.body;
@@ -31,12 +35,22 @@ async function signIn(ctx){
   }
 }
 
-// async function createUser(ctx) {
-//   return ctx.body = {}
-// }
+async function inviteUser(ctx) { // todo: process only for person.user === null
+  // status: 1=active, 2=banned, 3=invited (not confirmed)
+  const {person_key} = ctx.params;
+  let {email} = ctx.request.body;
+  const person = await fetchPerson(person_key);
+  if (person.user) ctx.throw(400, 'person is user already');
+
+  email = Joi.attempt(email, emailSchema);
+  const password = Math.random().toString(36).slice(-8); // generate password
+  const userData = {email, passowrd, status: 3, invited: new Date(), invitedBy: ctx.state.user._id};
+  await createUser(person._id, userData);
+  return ctx.body = {message: 'create user'};
+}
 
 router
   .post('/signin', signIn)
-  // .post('/create', createUser);
+  .post('/invite/:person_key', authorize(['manager']), inviteUser);
 
 module.exports = router.routes();
