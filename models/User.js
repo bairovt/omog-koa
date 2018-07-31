@@ -6,6 +6,8 @@
 		this._id = profile._id;
 		this.name = profile.name;
 		this.roles = profile.roles || [];
+		this.status = profile.status;
+		this.fullname = profile.fullname;
 	}
 
 	isAdmin(){

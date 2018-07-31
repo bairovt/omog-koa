@@ -28,7 +28,8 @@ module.exports = async function (ctx, next) {
         case 'ValidationError':
           await logError(400, ctx, error);
           ctx.status = 400;
-          return ctx.body = {errorMsg: error.message}
+          // return ctx.body = {errorMsg: error.message}
+          return ctx.body = {errorMsg: error.details}
         case 'ArangoError':
           switch (error.code) {
             case 404: // ArangoError
