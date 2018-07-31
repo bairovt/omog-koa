@@ -15,7 +15,7 @@
     "config": "^1.24.0",
     "gm": "^1.23.1",
     "joi": "^10.4.1",
-    "jsonwebtoken": "^7.3.0",
+    "jsonwebtoken": "^8.3.0",
     "kcors": "^2.2.1",
     "koa": "^2.3.0",
     "koa-bodyparser": "^4.2.0",
@@ -26,7 +26,7 @@
     "koa-static": "^3.0.0",
     "lodash": "^4.17.4",
     "md5": "^2.2.1",
-    "nodemailer": "^4.6.3",
+    "nodemailer": "^4.6.7",
     "socket.io": "^2.0.3",
     "socketio-jwt": "^4.5.0",
     "transliteration": "^1.1.16"
