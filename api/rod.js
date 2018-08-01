@@ -28,8 +28,19 @@ async function rodPersons(ctx, next) { //key
   ctx.body = { rod, persons };
 }
 
+async function addRod(ctx) {
+  const rods = db.collection('Rods');
+  // todo: валидация, схема
+  const {rod} = ctx.request.body;
+  rod.addedBy = ctx.state.user._id;
+  rod.addedAt = new Date();
+  const result = await rods.save(rod, {returnNew: true});
+  return ctx.body = result.new;
+}
+
 router
     .get('/all', allRods)    // страница: все рода
-    .get('/:key/persons', rodPersons);    // страница: все персоны рода
+    .get('/:key/persons', rodPersons)    // страница: все персоны рода
+    .post('/add', addRod)
 
 module.exports = router.routes();
