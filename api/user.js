@@ -55,7 +55,7 @@ async function inviteUser(ctx) { // todo: process only for person.user === null
   console.log(password);
   const userData = {
     email, password,
-    status: 3,
+    status: 1, // todo: change to 3 (error when login: findClosestUsers -> FILTER v.user.status == 1)
     invitedAt: new Date(),
     invitedBy: ctx.state.user._id
   };
