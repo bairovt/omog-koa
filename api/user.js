@@ -61,11 +61,11 @@ async function inviteUser(ctx) { // todo: process only for person.user === null
   };
   await createUser(person._id, userData);
   const mailOptions = {
-    from: '"MyRod.info" <mail@myrod.info>',
+    from: '"omog.info" <mail@omog.info>',
     to: email,
-    subject: `Приглашение на MyRod.info`,
+    subject: `Приглашение на omog.info`,
     html: `<p>${ctx.state.user.fullname} приглашает Вас присоединиться к родовой сети
-      <b><a target="_blank" href="https://myrod.info">MyRod.info</a></b></p>
+      <b><a target="_blank" href="https://omog.info">omog.info</a></b></p>
       <p>Ваш пароль для входа: <b>${password}</b></p>
     `
   }

@@ -17,9 +17,9 @@ module.exports = {
       user: 'rod_base_user',
       password: 'rod_base_pass'
     },
-    uploadDir: '/home/tumen/vuejs/vrodu.su/static/upload',
+    uploadDir: '/home/tumen/vuejs/omog.info/static/upload',
     mailer: {
-        user: 'mail@myrod.info',
+        user: 'mail@omog.info',
         pass: 'password'
     }
 };
