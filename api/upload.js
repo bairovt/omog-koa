@@ -31,8 +31,7 @@ const storage = multer.diskStorage({
     filename = "picimage_" + Date.now() + ".jpg";
     cb(null, filename)
   }
-});
-
+})
 function fileFilter (req, file, cb) {
   if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
     cb(null, true)
@@ -42,7 +41,6 @@ function fileFilter (req, file, cb) {
     cb(err, false)
   }
 }
-
 const upload = multer({
   storage,
   fileFilter,
@@ -53,10 +51,10 @@ const upload = multer({
 
 async function prepare(ctx, next) {
   // todo: person_key verify, perms
-  const {person_key} = ctx.params;
-  const person = await fetchPerson(person_key); // or throw 404
+  const {person_key} = ctx.params
+  const person = await fetchPerson(person_key) // or throw 404
   if (await checkPermission(ctx.state.user, person, {manager: true})) {
-    const uploadDir = path.join(config.get('uploadDir'), person_key);
+    const uploadDir = path.join(config.get('uploadDir'), person_key)
     let stats;
     try {
       stats = await stat(uploadDir)
@@ -67,31 +65,29 @@ async function prepare(ctx, next) {
         ctx.throw(err)
       }
     }
-    ctx.req.uploadDir = uploadDir;
+    ctx.req.uploadDir = uploadDir
     await next()
   } else {
     ctx.throw(403, 'upload_is_not_allowed');
   }
 }
 
-// todo: check upload not .jpeg images
-/* image converts to jpg on frontend */
 async function uploadPic (ctx) { //POST
-  const {person_key} = ctx.params;
-  const picFilename = "pic.jpg";
-  const picPath = path.join(config.get('uploadDir'), person_key, picFilename);
+  const {person_key} = ctx.params
+  const picFilename = "pic.jpg"
+  const picPath = path.join(config.get('uploadDir'), person_key, picFilename)
   const file = ctx.req.file;
   function gmWritePromise(imgPath) {
     return new Promise(function(resolve, reject) {
       gm(imgPath)
       .resize(250, 250).noProfile()
       .write(picPath, function(err){
-        if(err) return reject(err);
+        if(err) return reject(err)
         resolve()
       })
     })
   }
-  await gmWritePromise(file.path);
+  await gmWritePromise(file.path)
   const Persons = db.collection('Persons');
   await Persons.update(person_key, {pic: picFilename});
   ctx.body = {pic: picFilename}
