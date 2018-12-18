@@ -74,14 +74,16 @@ async function prepare(ctx, next) {
 
 async function uploadPic (ctx) { //POST
   const {person_key} = ctx.params
-  const picFilename = "pic.jpg"
-  const picPath = path.join(config.get('uploadDir'), person_key, picFilename)
   const file = ctx.req.file;
+  const avatarPath = file.path.replace('picimage_', 'avatar_');
+  const parts = avatarPath.split('/');
+  const avatarFilename = parts[parts.length - 1];
+
   function gmWritePromise(imgPath) {
     return new Promise(function(resolve, reject) {
       gm(imgPath)
       .resize(250, 250).noProfile()
-      .write(picPath, function(err){
+      .write(avatarPath, function(err){
         if(err) return reject(err)
         resolve()
       })
@@ -89,8 +91,8 @@ async function uploadPic (ctx) { //POST
   }
   await gmWritePromise(file.path)
   const Persons = db.collection('Persons');
-  await Persons.update(person_key, {pic: picFilename});
-  ctx.body = {pic: picFilename}
+  await Persons.update(person_key, {pic: avatarFilename});
+  ctx.body = {pic: avatarFilename}
 }
 
 router
