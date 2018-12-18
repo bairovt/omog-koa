@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon rod-server.js"
+    "start": "NODE_ENV=development nodemon rod-server.js"
   },
   "author": "Bairov Tumen Gonchikbalovich",
   "license": "ISC",
@@ -32,7 +32,8 @@
     "transliteration": "^1.1.16"
   },
   "devDependencies": {
-    "koa-logger": "^3.0.0"
+    "koa-logger": "^3.0.0",
+    "nodemon": "^1.18.9"
   },
   "moduleRoots": [
     "/home/tumen/nodejs/rod.so"
