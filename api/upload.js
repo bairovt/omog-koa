@@ -31,7 +31,7 @@ const storage = multer.diskStorage({
     filename = "picimage_" + Date.now() + ".jpg";
     cb(null, filename)
   }
-})
+});
 function fileFilter (req, file, cb) {
   if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
     cb(null, true)
@@ -51,10 +51,10 @@ const upload = multer({
 
 async function prepare(ctx, next) {
   // todo: person_key verify, perms
-  const {person_key} = ctx.params
-  const person = await fetchPerson(person_key) // or throw 404
+  const {person_key} = ctx.params;
+  const person = await fetchPerson(person_key); // or throw 404
   if (await checkPermission(ctx.state.user, person, {manager: true})) {
-    const uploadDir = path.join(config.get('uploadDir'), person_key)
+    const uploadDir = path.join(config.get('uploadDir'), person_key);
     let stats;
     try {
       stats = await stat(uploadDir)
@@ -65,7 +65,7 @@ async function prepare(ctx, next) {
         ctx.throw(err)
       }
     }
-    ctx.req.uploadDir = uploadDir
+    ctx.req.uploadDir = uploadDir;
     await next()
   } else {
     ctx.throw(403, 'upload_is_not_allowed');
@@ -73,7 +73,7 @@ async function prepare(ctx, next) {
 }
 
 async function uploadPic (ctx) { //POST
-  const {person_key} = ctx.params
+  const {person_key} = ctx.params;
   const file = ctx.req.file;
   const avatarPath = file.path.replace('picimage_', 'avatar_');
   const parts = avatarPath.split('/');
@@ -84,12 +84,12 @@ async function uploadPic (ctx) { //POST
       gm(imgPath)
       .resize(250, 250).noProfile()
       .write(avatarPath, function(err){
-        if(err) return reject(err)
+        if(err) return reject(err);
         resolve()
       })
     })
   }
-  await gmWritePromise(file.path)
+  await gmWritePromise(file.path);
   const Persons = db.collection('Persons');
   await Persons.update(person_key, {pic: avatarFilename});
   ctx.body = {pic: avatarFilename}

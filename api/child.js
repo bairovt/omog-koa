@@ -31,7 +31,7 @@ async function setRelation(ctx){ // POST
     fromKey = end_key;
     toKey = start_key;
   }
-  
+
   // ключи должны быть реальными, иначе 404
   const fromPerson = await fetchPerson(fromKey);
   const toPerson = await fetchPerson(toKey);
@@ -45,7 +45,7 @@ async function setRelation(ctx){ // POST
 
   /* todo: заменить проверки №2 и №3 на полный траверс (!adopted) родственников - нельзя в качестве родного родителя или
       ребенка указать кровного родственника (adopted - можно) */
-  
+
   // проверка № 2
   let predkiAndPotomki = await fetchPredkiPotomkiIdUnion(fromPerson._id);
   if (predkiAndPotomki.includes(toPerson._id)) ctx.throw(400, 'Нельзя в качестве ребенка указать предка или потомка');
@@ -64,7 +64,7 @@ async function setRelation(ctx){ // POST
     history.push({del: existenEdge.del})    // запись истории
     history.push({set: {by: user._id, time: new Date()}})
     await childColl.update(existenEdge._id, {
-      del: null,      
+      del: null,
       history                               // todo: не учитывется adopted
     })
     return ctx.body = {}
@@ -74,21 +74,21 @@ async function setRelation(ctx){ // POST
     addedBy: user._id
   }
   if (adopted) edgeData.adopted = true
-  await createChildEdge(edgeData, fromPerson._id, toPerson._id);  
+  await createChildEdge(edgeData, fromPerson._id, toPerson._id);
   return ctx.body = {}
 }
 
 async function deleteChildEdge (ctx) {
   const {_key} = ctx.params;
-  const user = ctx.state.user
+  const user = ctx.state.user;
 
   const childColl = db.collection('child');
   const edge = await childColl.document(_key);
 
   if (edge.addedBy === user._id || user.hasRoles(['manager'])) {} // continue
-  else ctx.throw(403, 'нет санкций на удаление связи')
+  else ctx.throw(403, 'нет санкций на удаление связи');
 
-  const now = new Date()
+  const now = new Date();
   const parent_id = await db.query(
     aql`FOR e IN child
           FILTER e._key == ${_key}
@@ -99,7 +99,7 @@ async function deleteChildEdge (ctx) {
             }
           } IN child
           RETURN e._from
-    `).then(cursor => cursor.next())
+    `).then(cursor => cursor.next());
 
   ctx.body = {parent_key: parent_id.split('/')[1]}
 }
