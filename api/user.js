@@ -52,9 +52,9 @@ async function inviteUser(ctx) { // todo: process only for person.user === null
 
   email = Joi.attempt(email, emailSchema);
   const password = Math.random().toString(36).slice(-8); // generate password
-  console.log(password);
   const userData = {
-    email, password,
+    email,
+    password,
     status: 1, // todo: change to 3 (error when login: findClosestUsers -> FILTER v.user.status == 1)
     invitedAt: new Date(),
     invitedBy: ctx.state.user._id
@@ -68,7 +68,7 @@ async function inviteUser(ctx) { // todo: process only for person.user === null
       <b><a target="_blank" href="https://omog.info">omog.info</a></b></p>
       <p>Ваш пароль для входа: <b>${password}</b></p>
     `
-  }
+  };
   await sendMail(mailOptions);
   return ctx.body = {message: 'create user'};
 }

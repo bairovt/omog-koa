@@ -2,7 +2,6 @@
 const db = require('../lib/arangodb');
 const aql = require('arangojs').aql;
 const Router = require('koa-router');
-const loGet = require('lodash').get;
 const authorize = require('../middleware/authorize');
 const {fetchPerson, fetchPredkiPotomki, fetchPredkiPotomkiIdUnion, findCommonPredki,
       findClosestUsers, fetchPersonWithClosest, fetchProfile} = require('../lib/fetch-db'),
@@ -33,7 +32,7 @@ async function findPersons(ctx) {
 /* Person page */
 async function getPredkiPotomki(ctx) {
   let {person_key} = ctx.params;
-  const person = await fetchProfile(person_key)
+  const person = await fetchProfile(person_key);
   person.editable = await checkPermission(ctx.state.user, person, {manager: true}); // todoo
   // проверка прав на изменение персоны (добавление, изменение)
   // находим предков и потомков персоны
@@ -42,7 +41,7 @@ async function getPredkiPotomki(ctx) {
 }
 
 async function getProfile(ctx) {
-  const {person_key} = ctx.params
+  const {person_key} = ctx.params;
   const profile = await fetchProfile(person_key);
   // проверка прав на изменение персоны (добавление, изменение)
   profile.editable = await checkPermission(ctx.state.user, profile._id, {manager: true}); // todoo
@@ -53,7 +52,10 @@ async function createNewPerson(ctx) { //POST
   // todo:bug не показывает ошибки валидации (schema erros: 400 bad request)
   const {personData, isUser, userData} = ctx.request.body;
   const person = await createPerson(personData, ctx.state.user._id);
-  if (isUser) await createUser(person._id, userData);
+  if (isUser) {
+    userData.status = 1;
+    await createUser(person._id, userData);
+  }
   ctx.body = {newPersonKey: person._key};
 }
 

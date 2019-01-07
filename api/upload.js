@@ -8,7 +8,6 @@ const aql = require('arangojs').aql;
 const Router = require('koa-router');
 const multer = require('koa-multer');
 const gm = require('gm');
-const loGet = require('lodash').get;
 const authorize = require('../middleware/authorize');
 const {fetchPerson} = require('../lib/fetch-db'),
       {checkPermission} = require('../lib/person');

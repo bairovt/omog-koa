@@ -2,10 +2,9 @@
 const db = require('../lib/arangodb');
 const aql = require('arangojs').aql;
 const Router = require('koa-router');
-const loGet = require('lodash').get;
 const {fetchPerson, fetchPredkiPotomki, fetchPredkiPotomkiIdUnion, findCommonPredki,
       findClosestUsers, fetchPersonWithClosest} = require('../lib/fetch-db'),
-      {createChildEdge, createPerson, createUser, checkPermission} = require('../lib/person');
+      {createChildEdge, checkPermission} = require('../lib/person');
 const {personSchema, userSchema} = require('../lib/schemas'),
       Joi = require('joi');
 
@@ -20,8 +19,8 @@ async function setRelation(ctx){ // POST
   // if (!user.hasRoles('manager')) ctx.throw(403, 'only manager can set relation');
   let {start_key, end_key, reltype, adopted} = ctx.request.body;
 
-  start_key = start_key.trim()
-  end_key = end_key.trim()
+  start_key = start_key.trim();
+  end_key = end_key.trim();
 
   // проверка № 1
   if (start_key === end_key) ctx.throw(400, 'Нельзя человека указать ребенком самого себя');
@@ -58,22 +57,22 @@ async function setRelation(ctx){ // POST
   const existenEdge = await childColl.byExample({
                               _from: 'Persons/' + fromKey,
                               _to: 'Persons/' + toKey
-                            }).then((cursor)=>{return cursor.next()})
+                            }).then((cursor)=>{return cursor.next()});
   if (existenEdge) {
-    let history = existenEdge.history || []
-    history.push({del: existenEdge.del})    // запись истории
-    history.push({set: {by: user._id, time: new Date()}})
+    let history = existenEdge.history || [];
+    history.push({del: existenEdge.del});    // запись истории
+    history.push({set: {by: user._id, time: new Date()}});
     await childColl.update(existenEdge._id, {
       del: null,
       history                               // todo: не учитывется adopted
-    })
+    });
     return ctx.body = {}
   }
 
   const edgeData = {
     addedBy: user._id
-  }
-  if (adopted) edgeData.adopted = true
+  };
+  if (adopted) edgeData.adopted = true;
   await createChildEdge(edgeData, fromPerson._id, toPerson._id);
   return ctx.body = {}
 }
