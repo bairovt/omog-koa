@@ -36,8 +36,8 @@ async function getPredkiPotomki(ctx) {
   person.editable = await checkPermission(ctx.state.user, person, {manager: true}); // todoo
   // проверка прав на изменение персоны (добавление, изменение)
   // находим предков и потомков персоны
-  let {predki, potomki} = await fetchPredkiPotomki(person._id);
-  ctx.body = {person, predki, potomki}; //gens, gensCount
+  let {predki, potomki, siblings} = await fetchPredkiPotomki(person._id);
+  ctx.body = {person, predki, potomki, siblings}; //gens, gensCount
 }
 
 async function getProfile(ctx) {
