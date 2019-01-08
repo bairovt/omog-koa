@@ -44,7 +44,8 @@ async function getProfile(ctx) {
   const {person_key} = ctx.params;
   const profile = await fetchProfile(person_key);
   // проверка прав на изменение персоны (добавление, изменение)
-  profile.editable = await checkPermission(ctx.state.user, profile._id, {manager: true}); // todoo
+  profile.editable = await checkPermission(ctx.state.user, profile._id, {manager: true});
+  // todo: profile.allowedActions = ['invite', ...] // permissions matrix
   ctx.body = {profile}
 }
 

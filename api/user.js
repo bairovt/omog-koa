@@ -15,7 +15,7 @@ const {createUser} = require('../lib/person');
 
 async function signIn(ctx){
   let {email, password} = ctx.request.body;
-  email = email.toLowerCase()
+  email = email.toLowerCase();
   const person = await db.query(aql`
     FOR p IN Persons
       FILTER p.user.email==${email}
@@ -26,14 +26,14 @@ async function signIn(ctx){
   if (!passCheck) return ctx.throw(401, 'Неверный email или пароль');
   // todo: show license agreement confirmation if status = 3
   if ([1, 3].includes(person.user.status)) {
-    const profile = {     //payload
+    const jwtPayload = {
       name: person.name,
       fullname: `${person.name} ${person.surname}`,
       _key: person._key,
       _id: person._id,
       roles: person.user.roles
     };
-    const authToken = jwt.sign(profile, secretKey);
+    const authToken = jwt.sign(jwtPayload, secretKey);
     ctx.body = {
       authToken,
       person_key: person._key // todo: сделать возврат на запрашиваемую страницу
@@ -44,12 +44,19 @@ async function signIn(ctx){
 }
 
 async function inviteUser(ctx) { // todo: process only for person.user === null
+  // TODO: check permissions: only manager or higher and dedicated users (with canInvite: true)
+  // TODO: tests
+  if (
+    ctx.state.user.hasRole('manager') ||
+    ctx.state.user.canInvite
+  ) {}
+  else ctx.throw(403, 'Forbidden to invite user');
   // status: 1=active, 2=banned, 3=invited (not confirmed)
   const {person_key} = ctx.params;
   let {email} = ctx.request.body;
   const person = await fetchPerson(person_key);
   if (person.user) ctx.throw(400, 'person is user already');
-
+  // todo: restrict users that can be added?: например - не дальше двоюродных
   email = Joi.attempt(email, emailSchema);
   const password = Math.random().toString(36).slice(-8); // generate password
   const userData = {
@@ -69,12 +76,12 @@ async function inviteUser(ctx) { // todo: process only for person.user === null
       <p>Ваш пароль для входа: <b>${password}</b></p>
     `
   };
-  await sendMail(mailOptions);
+  await sendMail(mailOptions); // todo: rollback transaction if send error ??
   return ctx.body = {message: 'create user'};
 }
 
 router
   .post('/signin', signIn)
-  .post('/invite/:person_key', authorize(['manager']), inviteUser);
+  .post('/invite/:person_key', inviteUser);
 
 module.exports = router.routes();
