@@ -32,7 +32,7 @@ async function findPersons(ctx) {
 /* Person page */
 async function getPredkiPotomki(ctx) {
   let {person_key} = ctx.params;
-  const person = await fetchProfile(person_key);
+  const person = await fetchProfile('Persons/'+person_key, ctx.state.user._id);
   person.editable = await checkPermission(ctx.state.user, person, {manager: true}); // todoo
   // проверка прав на изменение персоны (добавление, изменение)
   // находим предков и потомков персоны
@@ -42,7 +42,7 @@ async function getPredkiPotomki(ctx) {
 
 async function getProfile(ctx) {
   const {person_key} = ctx.params;
-  const profile = await fetchProfile(person_key);
+  const profile = await fetchProfile('Persons/'+person_key, ctx.state.user._id);
   // проверка прав на изменение персоны (добавление, изменение)
   profile.editable = await checkPermission(ctx.state.user, profile._id, {manager: true});
   // todo: profile.allowedActions = ['invite', ...] // permissions matrix
