@@ -71,8 +71,8 @@ async function inviteUser(ctx) { // todo: process only for person.user === null
     from: '"omog.info" <mail@omog.info>',
     to: email,
     subject: `Приглашение на omog.info`,
-    html: `<p>${ctx.state.user.fullname} приглашает Вас присоединиться к родовой сети
-      <b><a target="_blank" href="https://omog.info">omog.info</a></b></p>
+    html: `<p>${ctx.state.user.fullname} приглашает Вас, ${person.name}, присоединиться к родовой социальной сети
+      <b><a target="_blank" href="https://omog.me">omog.me</a></b></p>
       <p>Ваш пароль для входа: <b>${password}</b></p>
     `
   };
