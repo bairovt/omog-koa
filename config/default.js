@@ -17,7 +17,7 @@ module.exports = {
       user: 'rod_base_user',
       password: 'rod_base_pass'
     },
-    uploadDir: '/home/tumen/vuejs/omogme/static/upload',
+    uploadDir: '/home/tumen/vuejs/omogme/dist/static/upload',
     mailer: {
         user: 'mail@omog.info',
         pass: 'password'
