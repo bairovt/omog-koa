@@ -52,6 +52,7 @@ async function setRelation(ctx){ // POST
   // let commonPredki = await findCommonPredki(fromPerson._id, toPerson._id);
   // if (commonPredki.length) ctx.throw(400, 'Нельзя в качестве ребенка указать человека с общим предком');
 
+  // todo: Переделать удаление связи child на реальное удаление с сохранение записи в истоию куда-нибудь
   // проверка № 4: // случай когда связь существует, но была удалена (свойство del) (ArangoError: unique constraint violated - in index 13524179 of type hash over ["_from","_to"]...)
   const childColl = db.collection('child');
   const existenEdge = await childColl.byExample({
