@@ -68,7 +68,7 @@ async function inviteUser(ctx) { // todo: process only for person.user === null
   };
   await createUser(person._id, userData);
   const mailOptions = {
-    from: '"omog.info" <mail@omog.info>',
+    from: '"omog.me" <mail@omog.me>',
     to: email,
     subject: `Приглашение на omog.info`,
     html: `<p>${ctx.state.user.fullname} приглашает Вас, ${person.name}, присоединиться к родовой социальной сети
@@ -76,6 +76,7 @@ async function inviteUser(ctx) { // todo: process only for person.user === null
       <p>Ваш пароль для входа: <b>${password}</b></p>
     `
   };
+  // todo: delete created user if sendMail error
   await sendMail(mailOptions); // todo: rollback transaction if send error ??
   return ctx.body = {message: 'create user'};
 }
