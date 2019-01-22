@@ -8,7 +8,7 @@ const router = new Router();
 async function allRods(ctx, next) {
   let rods = await db.query(aql`FOR rod IN Rods
                                   FILTER rod.type == 'subethons'
-                                  SORT rod.order
+                                  SORT rod.order DESC
                                   RETURN merge(rod,
                                     { subrods: (FOR v IN 1..1 OUTBOUND rod._id subrod
                                       OPTIONS {bfs: true, uniqueVertices: "global"}
