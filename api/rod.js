@@ -7,13 +7,18 @@ const router = new Router();
 
 async function allRods(ctx, next) {
   let rods = await db.query(aql`FOR rod IN Rods
+                                  FILTER rod.type == 'subethons'
                                   SORT rod.order
                                   RETURN merge(rod,
-                                    {count: FIRST(FOR p IN Persons
-                                               FILTER p.rod == rod._id
-                                               COLLECT WITH COUNT INTO length
-                                               RETURN length)
+                                    { subrods: (FOR v IN 1..1 OUTBOUND rod._id subrod
+                                      OPTIONS {bfs: true, uniqueVertices: "global"}
+                                      RETURN v)                                      
                                     })`).then(cursor => cursor.all());
+  // ,
+  // count: FIRST(FOR p IN Persons
+  //          FILTER p.rod == rod._id
+  //          COLLECT WITH COUNT INTO length
+  //          RETURN length)
 //todo: проверить безопасность
   ctx.body = {rods};
 }
