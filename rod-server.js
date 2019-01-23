@@ -1,12 +1,12 @@
 'use strict';
 const http = require('http'),
       Koa = require('koa'),
-      config = require('config'),      
+      config = require('config'),
       path = require('path'),
       Router = require('koa-router'),
       logger = require('koa-logger'),
       jwt = require('jsonwebtoken'),
-      cors = require('./middleware/cors'),      
+      cors = require('./middleware/cors'),
       errorHandler = require('./middleware/error-handler');
 
 
@@ -53,8 +53,9 @@ router
     .use('/api/rod', require('./api/rod'))
     .use('/api/person', require('./api/person'))
     .use('/api/child', require('./api/child'))        // operate with child edges
-    .use('/api/upload', require('./api/upload'));
-    
+    .use('/api/upload', require('./api/upload'))
+    .use('/api/stat', require('./api/stat'));
+
 app.use(router.routes());
 
 /* start koa server */
