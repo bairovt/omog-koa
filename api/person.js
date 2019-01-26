@@ -3,7 +3,7 @@ const db = require('../lib/arangodb');
 const aql = require('arangojs').aql;
 const Router = require('koa-router');
 const authorize = require('../middleware/authorize');
-const {fetchPredkiPotomki, fetchPersonWithClosest, fetchProfile} = require('../lib/fetch-db');
+const {fetchPersonWithClosest, fetchProfile} = require('../lib/fetch-db');
 const {personSchema} = require('../lib/schemas');
 const Person = require('../models/Person');
 const User = require('../models/User');
@@ -34,10 +34,10 @@ async function getTree(ctx) {
   let {person_key} = ctx.params;
   const {user} = ctx.state;
   const person = await Person.get(person_key);
-  const profile = await fetchProfile(person._id, ctx.state.user._id);
+  const profile = await fetchProfile(person._id);
+  profile.shortest = await person.getShortest(user._id);
+  /* проверка прав на изменение персоны (добавление, изменение) */
   profile.editable = await user.checkPermission(profile._id, {manager: true}); // todoo
-  // проверка прав на изменение персоны (добавление, изменение)
-  // находим предков и потомков персоны
   let {predki, potomki, siblings} = await person.fetchTree(profile._id);
   ctx.body = {profile, predki, potomki, siblings}; //gens, gensCount
 }
@@ -45,8 +45,8 @@ async function getTree(ctx) {
 async function getProfile(ctx) {
   const {person_key} = ctx.params;
   const {user} = ctx.state;
-  const profile = await fetchProfile('Persons/'+person_key, ctx.state.user._id);
-  // проверка прав на изменение персоны (добавление, изменение)
+  const person = await Person.get(person_key);
+  const profile = await fetchProfile(person._id);
   profile.editable = await user.checkPermission(profile._id, {manager: true});
   // todo: profile.allowedActions = ['invite', ...] // permissions matrix
   ctx.body = {profile}

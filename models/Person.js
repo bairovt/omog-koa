@@ -19,6 +19,7 @@ class Person {
 		this.born = person.born;
 		this.died = person.died;
 		this.addedBy = person.addedBy;
+		this.pic = person.pic;
 	}
 
   static async create(personData, addedBy){
@@ -77,6 +78,17 @@ class Person {
           }`).then(cursor => cursor.next());
   }
 
+  async getShortest(user_id) {
+    return await db.query(aql`
+	  FOR v, e IN ANY SHORTEST_PATH
+      ${this._id} TO ${user_id}
+      GRAPH 'childGraph'
+      RETURN {
+        person: {_key: v._key, _id: v._id, name: v.name, surname: v.surname, gender: v.gender, pic: v.pic},
+        edge: e
+      }`
+    ).then(cursor => cursor.all());
+  }
 }
 
 Person.schema = Joi.object().keys({
