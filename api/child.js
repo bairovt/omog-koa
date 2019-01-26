@@ -2,11 +2,9 @@
 const db = require('../lib/arangodb');
 const aql = require('arangojs').aql;
 const Router = require('koa-router');
-const {fetchPerson, fetchPredkiPotomki, fetchPredkiPotomkiIdUnion, findCommonPredki,
-      findClosestUsers, fetchPersonWithClosest} = require('../lib/fetch-db'),
+const {fetchPredkiPotomkiIdUnion} = require('../lib/fetch-db'),
       {createChildEdge} = require('../lib/person');
-const {personSchema, userSchema} = require('../lib/schemas'),
-      Joi = require('joi');
+const Person = require('../models/Person');
 
 
 const router = new Router();
@@ -32,8 +30,8 @@ async function setRelation(ctx){ // POST
   }
 
   // ключи должны быть реальными, иначе 404
-  const fromPerson = await fetchPerson(fromKey);
-  const toPerson = await fetchPerson(toKey);
+  const fromPerson = await Person.getBy(fromKey);
+  const toPerson = await Person.getBy(toKey);
 
   // соединение только своих персон (кроме модератора)
   if (fromPerson.addedBy === user._id && toPerson.addedBy === user._id || // both persons added by user

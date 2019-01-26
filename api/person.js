@@ -3,11 +3,12 @@ const db = require('../lib/arangodb');
 const aql = require('arangojs').aql;
 const Router = require('koa-router');
 const authorize = require('../middleware/authorize');
-const {fetchPerson, fetchPredkiPotomki, fetchPredkiPotomkiIdUnion, findCommonPredki,
-      findClosestUsers, fetchPersonWithClosest, fetchProfile} = require('../lib/fetch-db'),
-      {createChildEdge, createPerson} = require('../lib/person');
-const {personSchema, userSchema} = require('../lib/schemas'),
-      Joi = require('joi');
+const {fetchPredkiPotomki, fetchPersonWithClosest, fetchProfile} = require('../lib/fetch-db'),
+      {createChildEdge} = require('../lib/person');
+const {personSchema} = require('../lib/schemas');
+const Person = require('../models/Person');
+const User = require('../models/User');
+const Joi = require('joi');
 
 
 const router = new Router();
@@ -54,7 +55,7 @@ async function getProfile(ctx) {
 async function createNewPerson(ctx) { //POST
   // todo:bug не показывает ошибки валидации (schema erros: 400 bad request)
   const {personData, isUser, userData} = ctx.request.body;
-  const person = await createPerson(personData, ctx.state.user._id);
+  const person = await Person.create(personData, ctx.state.user._id);
   if (isUser) {
     userData.status = 1;
     await User.create(person._id, userData);
@@ -68,14 +69,14 @@ async function addPerson(ctx) { //POST
   const {person_key, reltype} = ctx.params;
   const {personData, relation} = ctx.request.body;
   const {user} = ctx.state;
-  const person = await fetchPerson(person_key);   // person к которому добавляем
+  const person = await Person.getBy(person_key);   // person к которому добавляем
   /* проверка санкций на добавление родителя или ребенка к персоне
       #1: может добавить ближайший родственник-юзер персоны (самый близкий - сам person)
       #2: ??? тот кто добавил персону (addedBy): person.addedBy === user._id
       #3: manager */
   if (await user.checkPermission(person._id, {manager: true}))
   {
-    const newPerson = await createPerson(personData, ctx.state.user._id);
+    const newPerson = await Person.create(personData, ctx.state.user._id);
     // create child edge
     let fromId = person._id, // reltype: 'son' or 'daughter'
         toId = newPerson._id;
@@ -85,7 +86,7 @@ async function addPerson(ctx) { //POST
     }
     const edgeData = {
       addedBy: user._id,
-    }
+    };
     if (relation.adopted) edgeData.adopted = true
     await createChildEdge(edgeData, fromId, toId);
     ctx.body = {newPersonKey: newPerson._key};
@@ -98,7 +99,7 @@ async function updatePerson(ctx) { //POST
   // todo: история изменений
   const {person_key} = ctx.params;
   const {user} = ctx.state;
-  const person = await fetchPerson(person_key);
+  const person = await Person.getBy(person_key);
 
   // проверка санкций
   if ( await user.checkPermission(person._id, {manager: true}) )
@@ -113,7 +114,7 @@ async function updatePerson(ctx) { //POST
       validPersonData.updated = {
         by: user._id,
         time: new Date()
-      }
+      };
       await db.collection('Persons').update(person._id, validPersonData, {keepNull: false});
       ctx.body = {};
     }

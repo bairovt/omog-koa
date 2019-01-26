@@ -1,7 +1,6 @@
 'use strict';
-const db = require('../lib/arangodb');
 const User = require('../models/User');
-const {fetchPerson} = require('../lib/fetch-db');
+const Person = require('../models/Person');
 const jwt = require('jsonwebtoken');
 const secretKey = require('config').get('secretKeys')[0];
 const _ = require('lodash');
@@ -18,7 +17,7 @@ module.exports = async function (ctx, next){
   const authToken = authHeader.split(' ').pop();
   const jwtPayload = jwt.verify(authToken, secretKey); //may throw JsonWebTokenError,
 
-  const person = await fetchPerson(jwtPayload._key);
+  const person = await Person.getBy(jwtPayload._key);
   if (!person ||
     person.user.status !== 1 ||
     !_.isEqual(_.sortBy(person.user.roles), _.sortBy(jwtPayload.roles))

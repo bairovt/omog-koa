@@ -8,9 +8,9 @@ const Joi = require('joi');
 const secretKey = require('config').get('secretKeys')[0];
 const sendMail = require('../lib/transporter');
 const authorize = require('../middleware/authorize');
-const {emailSchema} = require('../lib/schemas');
-const {fetchPerson} = require('../lib/fetch-db');
 const User = require('../models/User');
+const Person = require('../models/Person');
+const {emailSchema} = require('../lib/schemas');
 
 async function signIn(ctx){
   let {email, password} = ctx.request.body;
@@ -53,7 +53,7 @@ async function inviteUser(ctx) { // todo: process only for person.user === null
   // status: 0=invited (not confirmed), 1=active, 2=banned
   const {person_key} = ctx.params;
   let {email} = ctx.request.body;
-  const person = await fetchPerson(person_key);
+  const person = await Person.getBy(person_key);
   if (person.user) ctx.throw(400, 'person is user already');
   // todo: restrict users that can be added?: например - не дальше двоюродных
   email = Joi.attempt(email, emailSchema);

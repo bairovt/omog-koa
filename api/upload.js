@@ -9,9 +9,7 @@ const Router = require('koa-router');
 const multer = require('koa-multer');
 const gm = require('gm');
 const authorize = require('../middleware/authorize');
-const {fetchPerson} = require('../lib/fetch-db');
-const {personSchema, userSchema} = require('../lib/schemas');
-const Joi = require('joi');
+const Person = require('../models/Person');
 
 const router = new Router();
 
@@ -51,7 +49,7 @@ async function prepare(ctx, next) {
   // todo: person_key verify, perms
   const {person_key} = ctx.params;
   const {user} = ctx.state;
-  const person = await fetchPerson(person_key); // or throw 404
+  const person = await Person.getBy(person_key); // or throw 404
   if (await user.checkPermission(person._id, {manager: true})) {
     const uploadDir = path.join(config.get('uploadDir'), person_key);
     let stats;
