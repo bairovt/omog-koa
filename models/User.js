@@ -26,6 +26,12 @@ class User {
     return await persons.update(personId, {user: validUser});
   }
 
+  static async get(person_key) {
+    const persons = db.collection('Persons');
+    const person =  await persons.document(person_key);
+    return new User(person);
+  }
+
    static hashPassword(password, salt) { //promise
      if(!salt) salt = crypto.randomBytes(32).toString("base64"); //при проверке пароля указываем salt
      return new Promise((resolve, reject) => {

@@ -32,7 +32,8 @@ class Person {
 
   static async get(handle) {
     const persons = db.collection('Persons');
-    return await persons.document(handle);
+    const person =  await persons.document(handle);
+    return new Person(person);
   }
 
   static async createChildEdge(edgeData, fromId, toId) {

@@ -17,12 +17,13 @@ module.exports = async function (ctx, next){
   const authToken = authHeader.split(' ').pop();
   const jwtPayload = jwt.verify(authToken, secretKey); //may throw JsonWebTokenError,
 
-  const person = await Person.get(jwtPayload._key);
-  if (!person ||
-    person.user.status !== 1 ||
-    !_.isEqual(_.sortBy(person.user.roles), _.sortBy(jwtPayload.roles))
+  //todo: cover by tests
+  const user = await User.get(jwtPayload._key);
+  if (!user ||
+    user.status !== 1 ||
+    !_.isEqual(_.sortBy(user.roles), _.sortBy(jwtPayload.roles))
   ) ctx.throw(401, 'Jwt payload is not valid');
 
-  ctx.state.user = new User(person);
+  ctx.state.user = user;
   return await next()
 };
