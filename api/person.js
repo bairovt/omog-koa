@@ -32,8 +32,9 @@ async function findPersons(ctx) {
 /* Person page */
 async function getPredkiPotomki(ctx) {
   let {person_key} = ctx.params;
+  const {user} = ctx.state;
   const person = await fetchProfile('Persons/'+person_key, ctx.state.user._id);
-  person.editable = await checkPermission(ctx.state.user, person, {manager: true}); // todoo
+  person.editable = await user.checkPermission(person, {manager: true}); // todoo
   // проверка прав на изменение персоны (добавление, изменение)
   // находим предков и потомков персоны
   let {predki, potomki, siblings} = await fetchPredkiPotomki(person._id);
@@ -42,9 +43,10 @@ async function getPredkiPotomki(ctx) {
 
 async function getProfile(ctx) {
   const {person_key} = ctx.params;
+  const {user} = ctx.state;
   const profile = await fetchProfile('Persons/'+person_key, ctx.state.user._id);
   // проверка прав на изменение персоны (добавление, изменение)
-  profile.editable = await checkPermission(ctx.state.user, profile._id, {manager: true});
+  profile.editable = await user.checkPermission(profile._id, {manager: true});
   // todo: profile.allowedActions = ['invite', ...] // permissions matrix
   ctx.body = {profile}
 }
@@ -55,7 +57,7 @@ async function createNewPerson(ctx) { //POST
   const person = await createPerson(personData, ctx.state.user._id);
   if (isUser) {
     userData.status = 1;
-    await createUser(person._id, userData);
+    await User.create(person._id, userData);
   }
   ctx.body = {newPersonKey: person._key};
 }
@@ -64,14 +66,14 @@ async function addPerson(ctx) { //POST
   /** person_key - ключ существующего person, к которому добавляем нового person
    reltype: "father", "mother", "son", "daughter" */
   const {person_key, reltype} = ctx.params;
-  const {personData, relation} = ctx.request.body
-  const user = ctx.state.user;
+  const {personData, relation} = ctx.request.body;
+  const {user} = ctx.state;
   const person = await fetchPerson(person_key);   // person к которому добавляем
   /* проверка санкций на добавление родителя или ребенка к персоне
       #1: может добавить ближайший родственник-юзер персоны (самый близкий - сам person)
       #2: ??? тот кто добавил персону (addedBy): person.addedBy === user._id
       #3: manager */
-  if (await checkPermission(user, person._id, {manager: true}))
+  if (await user.checkPermission(person._id, {manager: true}))
   {
     const newPerson = await createPerson(personData, ctx.state.user._id);
     // create child edge
@@ -95,10 +97,11 @@ async function addPerson(ctx) { //POST
 async function updatePerson(ctx) { //POST
   // todo: история изменений
   const {person_key} = ctx.params;
+  const {user} = ctx.state;
   const person = await fetchPerson(person_key);
-  const user = ctx.state.user;
+
   // проверка санкций
-  if ( await checkPermission(user, person._id, {manager: true}) )
+  if ( await user.checkPermission(person._id, {manager: true}) )
   {
     let result = Joi.validate(ctx.request.body.person, personSchema, {stripUnknown: true});
     if (result.error) {

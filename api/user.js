@@ -6,12 +6,11 @@ const router = require('koa-router')();
 const jwt = require('jsonwebtoken');
 const Joi = require('joi');
 const secretKey = require('config').get('secretKeys')[0];
-const {checkPassword} = require('../lib/password');
 const sendMail = require('../lib/transporter');
 const authorize = require('../middleware/authorize');
 const {emailSchema} = require('../lib/schemas');
 const {fetchPerson} = require('../lib/fetch-db');
-const {createUser} = require('../lib/person');
+const User = require('../models/User');
 
 async function signIn(ctx){
   let {email, password} = ctx.request.body;
@@ -22,7 +21,7 @@ async function signIn(ctx){
       RETURN p
   `).then(cursor => cursor.next());
   if (!person) ctx.throw(401, 'Неверный email или пароль');
-  const passCheck = await checkPassword(password, person.user.passHash);
+  const passCheck = await User.checkPassword(password, person.user.passHash);
   if (!passCheck) return ctx.throw(401, 'Неверный email или пароль');
   // todo: show license agreement confirmation if status = 3
   if ([1, 3].includes(person.user.status)) {
@@ -51,7 +50,7 @@ async function inviteUser(ctx) { // todo: process only for person.user === null
     ctx.state.user.canInvite
   ) {}
   else ctx.throw(403, 'Forbidden to invite user');
-  // status: 1=active, 2=banned, 3=invited (not confirmed)
+  // status: 0=invited (not confirmed), 1=active, 2=banned
   const {person_key} = ctx.params;
   let {email} = ctx.request.body;
   const person = await fetchPerson(person_key);
@@ -66,7 +65,7 @@ async function inviteUser(ctx) { // todo: process only for person.user === null
     invitedAt: new Date(),
     invitedBy: ctx.state.user._id
   };
-  await createUser(person._id, userData);
+  await User.create(person._id, userData);
   const mailOptions = {
     from: '"omog.me" <mail@omog.me>',
     to: email,
