@@ -11,6 +11,12 @@ class Person {
 		this.name = person.name;
 		this.midname = person.midname;
 		this.surname = person.surname;
+		this.maidenName = person.maidenName;
+		this.info = person.info;
+		this.rod = person.rod;
+		this.gender = person.gender;
+		this.born = person.born;
+		this.died = person.died;
 		this.addedBy = person.addedBy;
 	}
 
@@ -20,7 +26,8 @@ class Person {
     validPerson.created = new Date(); // todo: rename to createdAt
     validPerson.addedBy = addedBy;
     const persons = db.collection('Persons');
-    return await persons.save(validPerson);
+    const person = await persons.save(validPerson);
+    return new Person(person);
   }
 
   static async getBy(handle) {
