@@ -3,8 +3,7 @@ const db = require('../lib/arangodb');
 const aql = require('arangojs').aql;
 const Router = require('koa-router');
 const authorize = require('../middleware/authorize');
-const {fetchPredkiPotomki, fetchPersonWithClosest, fetchProfile} = require('../lib/fetch-db'),
-      {createChildEdge} = require('../lib/person');
+const {fetchPredkiPotomki, fetchPersonWithClosest, fetchProfile} = require('../lib/fetch-db');
 const {personSchema} = require('../lib/schemas');
 const Person = require('../models/Person');
 const User = require('../models/User');
@@ -74,25 +73,23 @@ async function addPerson(ctx) { //POST
       #1: может добавить ближайший родственник-юзер персоны (самый близкий - сам person)
       #2: ??? тот кто добавил персону (addedBy): person.addedBy === user._id
       #3: manager */
-  if (await user.checkPermission(person._id, {manager: true}))
-  {
-    const newPerson = await Person.create(personData, ctx.state.user._id);
-    // create child edge
-    let fromId = person._id, // reltype: 'son' or 'daughter'
-        toId = newPerson._id;
-    if ( ['father', 'mother'].includes(reltype) ) { // reverse
-      fromId = newPerson._id;
-      toId = person._id;
-    }
-    const edgeData = {
-      addedBy: user._id,
-    };
-    if (relation.adopted) edgeData.adopted = true
-    await createChildEdge(edgeData, fromId, toId);
-    ctx.body = {newPersonKey: newPerson._key};
-  } else {
+  if (!(await user.checkPermission(person._id, {manager: true}))) {
     ctx.throw(403, "Нет санкций на добавление персоны");
   }
+  const newPerson = await Person.create(personData, ctx.state.user._id);
+  // create child edge
+  let fromId = person._id, // reltype: 'son' or 'daughter'
+      toId = newPerson._id;
+  if ( ['father', 'mother'].includes(reltype) ) { // reverse
+    fromId = newPerson._id;
+    toId = person._id;
+  }
+  const edgeData = {
+    addedBy: user._id,
+  };
+  if (relation.adopted) edgeData.adopted = true;
+  await Person.createChildEdge(edgeData, fromId, toId);
+  ctx.body = {newPersonKey: newPerson._key};
 }
 
 async function updatePerson(ctx) { //POST

@@ -2,8 +2,7 @@
 const db = require('../lib/arangodb');
 const aql = require('arangojs').aql;
 const Router = require('koa-router');
-const {fetchPredkiPotomkiIdUnion} = require('../lib/fetch-db'),
-      {createChildEdge} = require('../lib/person');
+const {fetchPredkiPotomkiIdUnion} = require('../lib/fetch-db');
 const Person = require('../models/Person');
 
 
@@ -52,8 +51,8 @@ async function setRelation(ctx){ // POST
 
   // todo: Переделать удаление связи child на реальное удаление с сохранение записи в истоию куда-нибудь
   // проверка № 4: // случай когда связь существует, но была удалена (свойство del) (ArangoError: unique constraint violated - in index 13524179 of type hash over ["_from","_to"]...)
-  const childColl = db.collection('child');
-  const existenEdge = await childColl.byExample({
+  const childCollection = db.collection('child');
+  const existenEdge = await childCollection.byExample({
                               _from: 'Persons/' + fromKey,
                               _to: 'Persons/' + toKey
                             }).then((cursor)=>{return cursor.next()});
@@ -61,7 +60,7 @@ async function setRelation(ctx){ // POST
     let history = existenEdge.history || [];
     history.push({del: existenEdge.del});    // запись истории
     history.push({set: {by: user._id, time: new Date()}});
-    await childColl.update(existenEdge._id, {
+    await childCollection.update(existenEdge._id, {
       del: null,
       history                               // todo: не учитывется adopted
     });
@@ -72,7 +71,7 @@ async function setRelation(ctx){ // POST
     addedBy: user._id
   };
   if (adopted) edgeData.adopted = true;
-  await createChildEdge(edgeData, fromPerson._id, toPerson._id);
+  await Person.createChildEdge(edgeData, fromPerson._id, toPerson._id);
   return ctx.body = {}
 }
 
@@ -80,8 +79,8 @@ async function deleteChildEdge (ctx) {
   const {_key} = ctx.params;
   const user = ctx.state.user;
 
-  const childColl = db.collection('child');
-  const edge = await childColl.document(_key);
+  const childCollection = db.collection('child');
+  const edge = await childCollection.document(_key);
 
   if (edge.addedBy === user._id || user.hasRoles(['manager'])) {} // continue
   else ctx.throw(403, 'нет санкций на удаление связи');

@@ -27,6 +27,12 @@ class Person {
     const persons = db.collection('Persons');
     return await persons.document(handle);
   }
+
+  static async createChildEdge(edgeData, fromId, toId) {
+    const Child = db.edgeCollection('child');
+    edgeData.created = new Date(); // todo: rename to addedAt
+    await Child.save(edgeData, fromId, toId);
+  }
 }
 
 Person.schema = Joi.object().keys({
