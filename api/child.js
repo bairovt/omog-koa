@@ -29,8 +29,8 @@ async function setRelation(ctx){ // POST
   }
 
   // ключи должны быть реальными, иначе 404
-  const fromPerson = await Person.getBy(fromKey);
-  const toPerson = await Person.getBy(toKey);
+  const fromPerson = await Person.get(fromKey);
+  const toPerson = await Person.get(toKey);
 
   // соединение только своих персон (кроме модератора)
   if (fromPerson.addedBy === user._id && toPerson.addedBy === user._id || // both persons added by user

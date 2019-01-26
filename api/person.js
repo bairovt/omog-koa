@@ -68,7 +68,7 @@ async function addPerson(ctx) { //POST
   const {person_key, reltype} = ctx.params;
   const {personData, relation} = ctx.request.body;
   const {user} = ctx.state;
-  const person = await Person.getBy(person_key);   // person к которому добавляем
+  const person = await Person.get(person_key);   // person к которому добавляем
   /* проверка санкций на добавление родителя или ребенка к персоне
       #1: может добавить ближайший родственник-юзер персоны (самый близкий - сам person)
       #2: ??? тот кто добавил персону (addedBy): person.addedBy === user._id
@@ -96,7 +96,7 @@ async function updatePerson(ctx) { //POST
   // todo: история изменений
   const {person_key} = ctx.params;
   const {user} = ctx.state;
-  const person = await Person.getBy(person_key);
+  const person = await Person.get(person_key);
 
   // проверка санкций
   if ( await user.checkPermission(person._id, {manager: true}) )

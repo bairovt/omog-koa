@@ -30,7 +30,7 @@ class Person {
     return new Person(person);
   }
 
-  static async getBy(handle) {
+  static async get(handle) {
     const persons = db.collection('Persons');
     return await persons.document(handle);
   }

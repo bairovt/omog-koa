@@ -17,7 +17,7 @@ module.exports = async function (ctx, next){
   const authToken = authHeader.split(' ').pop();
   const jwtPayload = jwt.verify(authToken, secretKey); //may throw JsonWebTokenError,
 
-  const person = await Person.getBy(jwtPayload._key);
+  const person = await Person.get(jwtPayload._key);
   if (!person ||
     person.user.status !== 1 ||
     !_.isEqual(_.sortBy(person.user.roles), _.sortBy(jwtPayload.roles))
