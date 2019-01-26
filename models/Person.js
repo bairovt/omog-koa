@@ -4,6 +4,7 @@ const aql = require('arangojs').aql;
 const Joi = require('joi');
 const {findClosestUsers} = require('../lib/fetch-db');
 const {nameSchema} = require('../lib/schemas');
+const CustomError = require('../lib/custom-error');
 
 class Person {
 	constructor(person){
@@ -42,6 +43,31 @@ class Person {
     const Child = db.edgeCollection('child');
     edgeData.created = new Date(); // todo: rename to addedAt
     await Child.save(edgeData, fromId, toId);
+  }
+
+  async fetchProfile() {
+    // todo: get addedBy by DOCUMENT command with only some fields
+    // TODO: refactor shortest path (common ancs, relationship)
+    const profile = await db.query(aql`
+	  FOR p IN Persons
+	      FILTER p._id == ${this._id}
+	      RETURN MERGE({ _key: p._key, _id: p._id,
+            name: p.name, surname: p.surname, midname: p.midname,
+            gender: p.gender, maidenName: p.maidenName, born: p.born, died: p.died, pic: p.pic, info: p.info,
+            quotes: p.quotes,
+            user: p.user.status
+          }, {
+            rod: DOCUMENT(p.rod)
+          }, {
+            addedBy: FIRST(FOR added IN Persons
+                        FILTER added._id == p.addedBy
+                        RETURN {name: added.name, surname: added.surname, _key: added._key})
+          }
+        )`
+    ).then(cursor => cursor.next());
+
+    if (profile === undefined) throw(new CustomError(404, ': person/profile not found'));
+    return profile
   }
 
   async fetchTree() {

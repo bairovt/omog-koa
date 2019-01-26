@@ -3,7 +3,7 @@ const db = require('../lib/arangodb');
 const aql = require('arangojs').aql;
 const Router = require('koa-router');
 const authorize = require('../middleware/authorize');
-const {fetchPersonWithClosest, fetchProfile} = require('../lib/fetch-db');
+const {fetchPersonWithClosest} = require('../lib/fetch-db');
 const {personSchema} = require('../lib/schemas');
 const Person = require('../models/Person');
 const User = require('../models/User');
@@ -34,7 +34,7 @@ async function getTree(ctx) {
   let {person_key} = ctx.params;
   const {user} = ctx.state;
   const person = await Person.get(person_key);
-  const profile = await fetchProfile(person._id);
+  const profile = await person.fetchProfile(person._id);
   profile.shortest = await person.getShortest(user._id);
   /* проверка прав на изменение персоны (добавление, изменение) */
   profile.editable = await user.checkPermission(profile._id, {manager: true}); // todoo
@@ -46,7 +46,7 @@ async function getProfile(ctx) {
   const {person_key} = ctx.params;
   const {user} = ctx.state;
   const person = await Person.get(person_key);
-  const profile = await fetchProfile(person._id);
+  const profile = await person.fetchProfile(person._id);
   profile.editable = await user.checkPermission(profile._id, {manager: true});
   // todo: profile.allowedActions = ['invite', ...] // permissions matrix
   ctx.body = {profile}
