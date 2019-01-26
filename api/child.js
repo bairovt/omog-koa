@@ -4,7 +4,7 @@ const aql = require('arangojs').aql;
 const Router = require('koa-router');
 const {fetchPerson, fetchPredkiPotomki, fetchPredkiPotomkiIdUnion, findCommonPredki,
       findClosestUsers, fetchPersonWithClosest} = require('../lib/fetch-db'),
-      {createChildEdge, checkPermission} = require('../lib/person');
+      {createChildEdge} = require('../lib/person');
 const {personSchema, userSchema} = require('../lib/schemas'),
       Joi = require('joi');
 

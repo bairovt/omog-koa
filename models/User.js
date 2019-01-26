@@ -78,7 +78,7 @@ module.exports = class User {
       if ( this.hasRoles(['manager']) ) return true
     }
     let closestUsers = await findClosestUsers(person_id); // юзеры, которые могут изменять person
-    if (closestUsers.some(item => item._id === user._id)) return true;  // если user является ближайшим родственником-юзером
+    if (closestUsers.some(item => item._id === this._id)) return true;  // если user является ближайшим родственником-юзером
     return false
   }
 };

@@ -9,10 +9,9 @@ const Router = require('koa-router');
 const multer = require('koa-multer');
 const gm = require('gm');
 const authorize = require('../middleware/authorize');
-const {fetchPerson} = require('../lib/fetch-db'),
-      {checkPermission} = require('../lib/person');
-const {personSchema, userSchema} = require('../lib/schemas'),
-      Joi = require('joi');
+const {fetchPerson} = require('../lib/fetch-db');
+const {personSchema, userSchema} = require('../lib/schemas');
+const Joi = require('joi');
 
 const router = new Router();
 
@@ -51,8 +50,9 @@ const upload = multer({
 async function prepare(ctx, next) {
   // todo: person_key verify, perms
   const {person_key} = ctx.params;
+  const {user} = ctx.state;
   const person = await fetchPerson(person_key); // or throw 404
-  if (await checkPermission(ctx.state.user, person._id, {manager: true})) {
+  if (await user.checkPermission(person._id, {manager: true})) {
     const uploadDir = path.join(config.get('uploadDir'), person_key);
     let stats;
     try {

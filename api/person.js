@@ -5,7 +5,7 @@ const Router = require('koa-router');
 const authorize = require('../middleware/authorize');
 const {fetchPerson, fetchPredkiPotomki, fetchPredkiPotomkiIdUnion, findCommonPredki,
       findClosestUsers, fetchPersonWithClosest, fetchProfile} = require('../lib/fetch-db'),
-      {createChildEdge, createPerson, createUser, checkPermission} = require('../lib/person');
+      {createChildEdge, createPerson} = require('../lib/person');
 const {personSchema, userSchema} = require('../lib/schemas'),
       Joi = require('joi');
 
