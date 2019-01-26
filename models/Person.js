@@ -1,5 +1,6 @@
 'use strict';
 const db = require('../lib/arangodb');
+const aql = require('arangojs').aql;
 const Joi = require('joi');
 const {findClosestUsers} = require('../lib/fetch-db');
 const {nameSchema} = require('../lib/schemas');
@@ -41,6 +42,41 @@ class Person {
     edgeData.created = new Date(); // todo: rename to addedAt
     await Child.save(edgeData, fromId, toId);
   }
+
+  async fetchTree() {
+    return await db.query(
+      aql`RETURN {
+            predki:
+              (FOR v, e, p IN 1..100 INBOUND ${this._id} GRAPH 'childGraph'
+                // OPTIONS {bfs: true}
+                FILTER p.edges[*].del ALL == null            // не учитывать удаленные связи
+                RETURN {
+                  person: {_key: v._key, _id: v._id, name: v.name, surname: v.surname, gender: v.gender, pic: v.pic},
+                  edge: e,
+                  // edges: p.edges
+                  pathLength: LENGTH(p.edges)
+                }),
+            potomki:
+              (FOR v, e, p IN 1..100 OUTBOUND ${this._id} GRAPH 'childGraph'
+                OPTIONS {bfs: true, uniqueVertices: "global"} // uniqueVertices: "global" - остутствует один edge на каждый дубль
+                FILTER p.edges[*].del ALL == null
+                RETURN {
+                  person: {_key: v._key, _id: v._id, name: v.name, surname: v.surname, gender: v.gender, pic: v.pic},
+                  edge: e,
+                  pathLength: LENGTH(p.edges)
+                }),
+            siblings: 
+              (FOR v,e,p IN 2 ANY ${this._id} GRAPH 'childGraph'
+                //OPTIONS {bfs: true, uniqueVertices: "global"}
+                FILTER p.edges[0]._from == p.edges[1]._from AND p.edges[*].del ALL == null
+                RETURN {
+                  person: {_key: v._key, _id: v._id, name: v.name, surname: v.surname, gender: v.gender, pic: v.pic},
+                  edge: e
+                  //pathLength: LENGTH(p.edges)
+                })
+          }`).then(cursor => cursor.next());
+  }
+
 }
 
 Person.schema = Joi.object().keys({

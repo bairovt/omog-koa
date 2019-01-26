@@ -30,15 +30,16 @@ async function findPersons(ctx) {
 }
 
 /* Person page */
-async function getPredkiPotomki(ctx) {
+async function getTree(ctx) {
   let {person_key} = ctx.params;
   const {user} = ctx.state;
-  const person = await fetchProfile('Persons/'+person_key, ctx.state.user._id);
-  person.editable = await user.checkPermission(person, {manager: true}); // todoo
+  const person = await Person.get(person_key);
+  const profile = await fetchProfile(person._id, ctx.state.user._id);
+  profile.editable = await user.checkPermission(profile._id, {manager: true}); // todoo
   // проверка прав на изменение персоны (добавление, изменение)
   // находим предков и потомков персоны
-  let {predki, potomki, siblings} = await fetchPredkiPotomki(person._id);
-  ctx.body = {person, predki, potomki, siblings}; //gens, gensCount
+  let {predki, potomki, siblings} = await person.fetchTree(profile._id);
+  ctx.body = {profile, predki, potomki, siblings}; //gens, gensCount
 }
 
 async function getProfile(ctx) {
@@ -133,8 +134,8 @@ async function deletePerson(ctx) { // key
 
   if (personAndClosest.length > 2) ctx.throw(400, 'Запрещено удалять персону с более чем 1 связью');
 
-  const person = personAndClosest[0]
-  const closest = personAndClosest[1]
+  const person = personAndClosest[0];
+  const closest = personAndClosest[1];
 
   if (person._id === user._id) ctx.throw(400, 'Запрещено удалять себя'); // запрет удаления персоны самой себя
 
@@ -146,7 +147,7 @@ async function deletePerson(ctx) { // key
   const vertexCollection = childGraph.vertexCollection('Persons');
   await vertexCollection.remove(key); // todo: test проверка несуществующего ключа
 
-  if (closest) ctx.body = {redirKey: closest._key}
+  if (closest) ctx.body = {redirKey: closest._key};
   else ctx.body = {redirKey: user._key}
 }
 
@@ -156,7 +157,7 @@ router
   .get('/profile/:person_key', getProfile)
   .post('/:person_key/add/:reltype', addPerson)    // обработка добавления персоны
   .post('/update/:person_key', updatePerson)    // обработка изменения персоны
-  .get('/:person_key/predki-potomki', getPredkiPotomki)    // person page, profile page
+  .get('/:person_key/tree', getTree)    // person page, profile page
   .delete('/:person_key', deletePerson);
 
 module.exports = router.routes();
