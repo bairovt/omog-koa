@@ -3,7 +3,6 @@ const db = require('../lib/arangodb');
 const aql = require('arangojs').aql;
 const Router = require('koa-router');
 const authorize = require('../middleware/authorize');
-const {fetchPersonWithClosest} = require('../lib/fetch-db');
 const Person = require('../models/Person');
 const User = require('../models/User');
 const Joi = require('joi');
@@ -121,33 +120,40 @@ async function updatePerson(ctx) { //POST
 }
 
 async function deletePerson(ctx) { // key
-  // todoo: do not realy delete person, mark as deleted instead
-  const key = ctx.params.person_key;
+  // todo:? do not realy delete person, mark as deleted instead
+  const {person_key} = ctx.params;
   const user = ctx.state.user;
 
+  const person = await Person.get(person_key);
+
+  if (person._id === user._id) {
+    ctx.throw(400, 'Запрещено удалять себя');
+  }
   /* todo: санкции удаления персон:
   manager (все)
-  user (только тех, кого добавил сам)*/
+  user (только тех, кого добавил сам)
+  продумать, разрешить ли ближайшему родственнику удалять персону (если добавил не он)
+  отображать кнопку Удалить, только если есть санкции удаления
+  */
 
-  const personAndClosest = await fetchPersonWithClosest(key); //person to remove
+  const nextOfKins = await person.fetchNextOfKins();
+  if (nextOfKins.length > 1) {
+    ctx.throw(400, 'Запрещено удалять персону с более чем 1 связью');
+  }
+  const nextOfKin = nextOfKins[0];
 
-  if (personAndClosest.length > 2) ctx.throw(400, 'Запрещено удалять персону с более чем 1 связью');
-
-  const person = personAndClosest[0];
-  const closest = personAndClosest[1];
-
-  if (person._id === user._id) ctx.throw(400, 'Запрещено удалять себя'); // запрет удаления персоны самой себя
-
-  if (person.addedBy === user._id || user.isAdmin() || user.hasRoles(['manager'])) {} // проверка санкций
+  /* проверка санкций */
+  if (person.addedBy === user._id || user.isAdmin() || user.hasRoles(['manager'])) {}
   else ctx.throw(403, 'Нет санкций на удаление персоны');
 
   /* правильное удаление Person (вершины графа удалять вместе со связями) */
-  const childGraph = db.graph('childGraph');
-  const vertexCollection = childGraph.vertexCollection('Persons');
-  await vertexCollection.remove(key); // todo: test проверка несуществующего ключа
+  await Person.delete(person._key);
 
-  if (closest) ctx.body = {redirKey: closest._key};
-  else ctx.body = {redirKey: user._key}
+  if (nextOfKin) {
+    ctx.body = {redirKey: nextOfKin._key};
+  } else {
+    ctx.body = {redirKey: user._key}
+  }
 }
 
 router

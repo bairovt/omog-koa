@@ -50,6 +50,9 @@ class Person {
   static async get(handle) {
     const persons = db.collection('Persons');
     const person =  await persons.document(handle);
+    if (!person) {
+      throw(new CustomError(404, ': person not found'));
+    }
     return new Person(person);
   }
 
@@ -57,6 +60,13 @@ class Person {
     const Child = db.edgeCollection('child');
     edgeData.created = new Date(); // todo: rename to addedAt
     await Child.save(edgeData, fromId, toId);
+  }
+
+  static async delete(person_key) {
+    /* правильное удаление Person (вершины графа удалять вместе со связями) */
+    const childGraph = db.graph('childGraph');
+    const vertexCollection = childGraph.vertexCollection('Persons');
+    await vertexCollection.remove(person_key);
   }
 
   async findClosestUsers() {
@@ -119,7 +129,9 @@ class Person {
         )`
     ).then(cursor => cursor.next());
 
-    if (profile === undefined) throw(new CustomError(404, ': person/profile not found'));
+    if (profile === undefined) {
+      throw(new CustomError(404, ': profile not found'));
+    }
     return profile
   }
 
@@ -167,6 +179,14 @@ class Person {
                 FILTER p.edges[*].del ALL == null
                 RETURN v._id)
            )`).then(cursor => cursor.next());
+  }
+
+  async fetchNextOfKins() {
+    return await db.query(
+      aql`FOR v, e, p IN 1..1 ANY ${this._id} GRAPH 'childGraph'
+              FILTER e.del == null
+              RETURN {_key: v._key, _id: v._id, addedBy: v.addedBy}`)
+      .then(cursor => cursor.all());
   }
 
   async getShortest(user_id) {
