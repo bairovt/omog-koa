@@ -37,7 +37,7 @@ async function getTree(ctx) {
   const profile = await person.fetchProfile(person._id);
   profile.shortest = await person.getShortest(user._id);
   /* проверка прав на изменение персоны (добавление, изменение) */
-  profile.editable = await user.checkPermission(profile._id, {manager: true}); // todoo
+  profile.editable = await person.checkPermission(user, {manager: true}); // todoo
   let {predki, potomki, siblings} = await person.fetchTree(profile._id);
   ctx.body = {profile, predki, potomki, siblings}; //gens, gensCount
 }
@@ -47,7 +47,7 @@ async function getProfile(ctx) {
   const {user} = ctx.state;
   const person = await Person.get(person_key);
   const profile = await person.fetchProfile(person._id);
-  profile.editable = await user.checkPermission(profile._id, {manager: true});
+  profile.editable = await person.checkPermission(user, {manager: true});
   // todo: profile.allowedActions = ['invite', ...] // permissions matrix
   ctx.body = {profile}
 }
@@ -74,7 +74,7 @@ async function addPerson(ctx) { //POST
       #1: может добавить ближайший родственник-юзер персоны (самый близкий - сам person)
       #2: ??? тот кто добавил персону (addedBy): person.addedBy === user._id
       #3: manager */
-  if (!(await user.checkPermission(person._id, {manager: true}))) {
+  if (!(await person.checkPermission(user, {manager: true}))) {
     ctx.throw(403, "Нет санкций на добавление персоны");
   }
   const newPerson = await Person.create(personData, ctx.state.user._id);
@@ -100,7 +100,7 @@ async function updatePerson(ctx) { //POST
   const person = await Person.get(person_key);
 
   // проверка санкций
-  if ( await user.checkPermission(person._id, {manager: true}) )
+  if ( await person.checkPermission(user, {manager: true}) )
   {
     let result = Joi.validate(ctx.request.body.person, personSchema, {stripUnknown: true});
     if (result.error) {

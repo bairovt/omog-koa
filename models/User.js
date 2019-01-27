@@ -2,10 +2,9 @@
 const db = require('../lib/arangodb');
 const crypto = require('crypto');
 const Joi = require('joi');
-const {findClosestUsers} = require('../lib/fetch-db');
 
 class User {
-	constructor(person){
+	constructor(person) {
 		this._key = person._key;
 		this._id = person._id;
 		this.name = person.name;
@@ -62,32 +61,22 @@ class User {
        });
    }
 
-   isAdmin(){
+   isAdmin() {
 		/* Checks if user is admin */
 		return this.roles.includes('admin');
 	}
 
-	hasRoles(allowedRoles){ // array
+	hasRoles(allowedRoles) { // array
     if (this.roles.includes('admin')) return true; // admin has all roles
 		/* Check if user has one of the allowed roles */
 		return this.roles.some(role => allowedRoles.includes(role)); // true or false
 	}
 
-	hasRole(role){ // string
+	hasRole(role) { // string
     if (this.roles.includes('admin')) return true;
 		/* Check if user has a role */
 		return this.roles.includes(role); // true or false
 	}
-
-  // todo: cover by tests
-  async checkPermission(person_id, options={}) {
-    if (options.manager) {
-      if ( this.hasRoles(['manager']) ) return true
-    }
-    let closestUsers = await findClosestUsers(person_id); // юзеры, которые могут изменять person
-    if (closestUsers.some(item => item._id === this._id)) return true;  // если user является ближайшим родственником-юзером
-    return false
-  }
 }
 
 module.exports = User;

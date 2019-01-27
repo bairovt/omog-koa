@@ -2,7 +2,6 @@
 const db = require('../lib/arangodb');
 const aql = require('arangojs').aql;
 const Joi = require('joi');
-const {findClosestUsers} = require('../lib/fetch-db');
 const {nameSchema} = require('../lib/schemas');
 const CustomError = require('../lib/custom-error');
 
@@ -58,6 +57,45 @@ class Person {
     const Child = db.edgeCollection('child');
     edgeData.created = new Date(); // todo: rename to addedAt
     await Child.save(edgeData, fromId, toId);
+  }
+
+  async findClosestUsers() {
+    // найти ближайших родственников-юзеров (у которых длина пути равна ближайшему элементу, согласно bfs)
+    // todo: сделать в одном запросе
+    // todo: продумать процедуру умирания пользователя
+    // todo: запретить приглашение родственника с разницей в возрасте более 2-х поколений во избежание мертвых душ
+    const depth = await db.query(
+      aql`FOR v, e, p
+          IN 0..100 ANY ${this._id}
+          GRAPH 'childGraph'
+          OPTIONS {bfs: true, uniqueVertices: 'global'}
+          FILTER v.user.status == 1
+          FILTER p.edges[*].del ALL == null
+          LIMIT 1
+        RETURN LENGTH(p.edges)`)
+      .then(cursor => cursor.next());
+
+    const closestRelativesUsers = await db.query(
+      aql`FOR v, e, p
+          IN ${depth} ANY ${this._id}
+          GRAPH "childGraph"
+          OPTIONS {bfs: true, uniqueVertices: 'global'}
+          FILTER v.user.status == 1
+          FILTER p.edges[*].del ALL == null
+        RETURN {_id: v._id, name: v.name, surname: v.surname}`) // depth: LENGTH(p.edges)
+      .then(cursor => cursor.all());
+
+    return closestRelativesUsers
+  }
+
+  // todo: cover by tests
+  async checkPermission(user, options={}) {
+    if (options.manager) {
+      if ( user.hasRoles(['manager']) ) return true
+    }
+    let closestUsers = await this.findClosestUsers(); // юзеры, которые могут изменять person
+    if (closestUsers.some(item => item._id === user._id)) return true;  // если user является ближайшим родственником-юзером
+    return false
   }
 
   async fetchProfile() {
