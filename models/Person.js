@@ -11,8 +11,8 @@ class Person {
 		this._key = person._key;
 		this._id = person._id;
 		this.name = person.name;
+    this.surname = person.surname;
 		this.midname = person.midname;
-		this.surname = person.surname;
 		this.maidenName = person.maidenName;
 		this.info = person.info;
 		this.rod = person.rod;
@@ -22,6 +22,21 @@ class Person {
 		this.addedBy = person.addedBy;
 		this.pic = person.pic;
 	}
+
+  static get schema () {
+    return Joi.object().keys({
+      _key: Joi.string().trim().regex(/^[a-zA-Z0-9]+$/).min(3).max(30).allow(null),
+      name: nameSchema.required(),
+      surname: nameSchema.empty('').allow(null),
+      midname: nameSchema.empty('').allow(null),
+      maidenName: nameSchema.empty('').allow(null),
+      info: Joi.string().trim().min(1).max(3000).empty('').allow(null),
+      rod: Joi.string().max(100).allow(null), // allow('') is same: empty('').default('')
+      gender: Joi.number().integer().min(0).max(1).required(),
+      born: Joi.number().integer().min(0).max(2020).empty('').allow(null),
+      died: Joi.number().integer().min(0).max(2020).empty('').allow(null),
+    });
+  }
 
   static async create(personData, addedBy){
     // todo: доделать валидацию
@@ -116,18 +131,5 @@ class Person {
     ).then(cursor => cursor.all());
   }
 }
-
-Person.schema = Joi.object().keys({
-  _key: Joi.string().trim().regex(/^[a-zA-Z0-9]+$/).min(3).max(30).allow(null),
-  name: nameSchema.required(),
-  surname: nameSchema.empty('').allow(null),
-  midname: nameSchema.empty('').allow(null),
-  maidenName: nameSchema.empty('').allow(null),
-  info: Joi.string().trim().min(1).max(3000).empty('').allow(null),
-  rod: Joi.string().max(100).allow(null), // allow('') is same: empty('').default('')
-  gender: Joi.number().integer().min(0).max(1).required(),
-  born: Joi.number().integer().min(0).max(2020).empty('').allow(null),
-  died: Joi.number().integer().min(0).max(2020).empty('').allow(null),
-});
 
 module.exports = Person;

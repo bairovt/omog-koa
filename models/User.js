@@ -15,6 +15,16 @@ class User {
 		this.fullname = `${person.name} ${person.surname}`;
 	}
 
+	static get schema() {
+    return Joi.object().keys({
+      email: Joi.string().trim().email().required(),
+      password: Joi.string().regex(/^[a-zA-Z0-9`~!@#$%^&\*()_=+/{}[\];:'"\\|,.<>-]|\?{3,30}$/).required(),
+      status: Joi.number().integer().min(0).max(5).required(),
+      invitedAt: Joi.date().allow(null),
+      invitedBy: Joi.string().allow(null)
+    });
+  }
+
   static async create(personId, userData) {
     // todo: доделать валидацию
     const validUser = Joi.attempt(userData, User.schema);
@@ -79,13 +89,5 @@ class User {
     return false
   }
 }
-
-User.schema = Joi.object().keys({
-  email: Joi.string().trim().email().required(),
-  password: Joi.string().regex(/^[a-zA-Z0-9`~!@#$%^&\*()_=+/{}[\];:'"\\|,.<>-]|\?{3,30}$/).required(),
-  status: Joi.number().integer().min(0).max(5).required(),
-  invitedAt: Joi.date().allow(null),
-  invitedBy: Joi.string().allow(null)
-});
 
 module.exports = User;
