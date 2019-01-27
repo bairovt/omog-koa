@@ -157,6 +157,18 @@ class Person {
           }`).then(cursor => cursor.next());
   }
 
+  async fetchPredkiPotomkiIdUnion() {
+    return await db.query(
+      aql`RETURN UNION(
+              (FOR v, e, p IN 1..100 INBOUND ${this._id} GRAPH 'childGraph'       //predki id
+                FILTER p.edges[*].del ALL == null
+                RETURN v._id),
+              (FOR v, e, p IN 1..100 OUTBOUND ${this._id} GRAPH 'childGraph'      //potomki id
+                FILTER p.edges[*].del ALL == null
+                RETURN v._id)
+           )`).then(cursor => cursor.next());
+  }
+
   async getShortest(user_id) {
     return await db.query(aql`
 	  FOR v, e IN ANY SHORTEST_PATH

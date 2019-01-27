@@ -4,7 +4,6 @@ const aql = require('arangojs').aql;
 const Router = require('koa-router');
 const authorize = require('../middleware/authorize');
 const {fetchPersonWithClosest} = require('../lib/fetch-db');
-const {personSchema} = require('../lib/schemas');
 const Person = require('../models/Person');
 const User = require('../models/User');
 const Joi = require('joi');
@@ -102,7 +101,7 @@ async function updatePerson(ctx) { //POST
   // проверка санкций
   if ( await person.checkPermission(user, {manager: true}) )
   {
-    let result = Joi.validate(ctx.request.body.person, personSchema, {stripUnknown: true});
+    let result = Joi.validate(ctx.request.body.person, Person.schema, {stripUnknown: true});
     if (result.error) {
       console.log(result.error.details, result.value);
       ctx.status = 400;         // todo: доп. инфо ошибок валидации

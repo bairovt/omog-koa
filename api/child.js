@@ -2,7 +2,6 @@
 const db = require('../lib/arangodb');
 const aql = require('arangojs').aql;
 const Router = require('koa-router');
-const {fetchPredkiPotomkiIdUnion} = require('../lib/fetch-db');
 const Person = require('../models/Person');
 
 
@@ -43,7 +42,7 @@ async function setRelation(ctx){ // POST
       ребенка указать кровного родственника (adopted - можно) */
 
   // проверка № 2
-  let predkiAndPotomki = await fetchPredkiPotomkiIdUnion(fromPerson._id);
+  let predkiAndPotomki = await fromPerson.fetchPredkiPotomkiIdUnion();
   if (predkiAndPotomki.includes(toPerson._id)) ctx.throw(400, 'Нельзя в качестве ребенка указать предка или потомка');
   // проверка № 3
   // let commonPredki = await findCommonPredki(fromPerson._id, toPerson._id);
