@@ -189,6 +189,27 @@ class Person {
       .then(cursor => cursor.all());
   }
 
+  async getCommonAncestorId(user_id){
+    // FILTER TO_BOOL(e.adopted) == false
+    if (user_id === this._id) {
+      return null;
+    }
+    return await db.query(aql`
+    RETURN LAST(
+      INTERSECTION(
+        (FOR v, e, p IN 1..40 INBOUND ${user_id} 
+          GRAPH 'childGraph'
+          OPTIONS {bfs: true}
+          FILTER TO_BOOL(e.del) == false
+          RETURN v._id),
+        (FOR v, e, p IN 1..40 INBOUND ${this._id}
+          GRAPH 'childGraph'
+          OPTIONS {bfs: true}
+          FILTER TO_BOOL(e.del) == false
+          RETURN v._id)
+    ))`).then(cursor => cursor.next());
+  }
+
   async getShortest(user_id) {
     return await db.query(aql`
 	  FOR v, e IN ANY SHORTEST_PATH
@@ -198,6 +219,17 @@ class Person {
         person: {_key: v._key, _id: v._id, name: v.name, surname: v.surname, gender: v.gender, pic: v.pic},
         edge: e
       }`
+    ).then(cursor => cursor.all());
+  }
+
+  async getCommonAncestorPath(user_id, ancestor_id) {
+    // FILTER TO_BOOL(e.adopted) == false
+    return await db.query(aql`
+	  FOR v, e, p IN 0..40 OUTBOUND ${ancestor_id} 
+      GRAPH 'childGraph'      
+      FILTER TO_BOOL(e.del) == false
+      FILTER v._id IN [${user_id}, ${this._id}]
+      RETURN p`
     ).then(cursor => cursor.all());
   }
 }
