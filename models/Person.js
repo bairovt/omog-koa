@@ -189,7 +189,7 @@ class Person {
       .then(cursor => cursor.all());
   }
 
-  async getCommonAncestorId(user_id){
+  async getCommonAncestorKey(user_id){
     // FILTER TO_BOOL(e.adopted) == false
     if (user_id === this._id) {
       return null;
@@ -201,16 +201,16 @@ class Person {
           GRAPH 'childGraph'
           OPTIONS {bfs: true}
           FILTER TO_BOOL(e.del) == false
-          RETURN v._id),
+          RETURN v._key),
         (FOR v, e, p IN 1..40 INBOUND ${this._id}
           GRAPH 'childGraph'
           OPTIONS {bfs: true}
           FILTER TO_BOOL(e.del) == false
-          RETURN v._id)
+          RETURN v._key)
     ))`).then(cursor => cursor.next());
   }
 
-  async getShortest(user_id) {
+  async getShortestPath(user_id) {
     return await db.query(aql`
 	  FOR v, e IN ANY SHORTEST_PATH
       ${this._id} TO ${user_id}
@@ -226,7 +226,7 @@ class Person {
     // FILTER TO_BOOL(e.adopted) == false
     return await db.query(aql`
 	  FOR v, e, p IN 0..40 OUTBOUND ${ancestor_id} 
-      GRAPH 'childGraph'      
+      GRAPH 'childGraph'
       FILTER TO_BOOL(e.del) == false
       FILTER v._id IN [${user_id}, ${this._id}]
       RETURN p`

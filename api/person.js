@@ -32,8 +32,8 @@ async function getTree(ctx) {
   let {person_key} = ctx.params;
   const {user} = ctx.state;
   const person = await Person.get(person_key);
-  const profile = await person.fetchProfile(person._id);
-  profile.commonAncestorId = await person.getCommonAncestorId(user._id);
+  const profile = await person.fetchProfile();
+  profile.commonAncestorKey = await person.getCommonAncestorKey(user._id);
   /* проверка прав на изменение персоны (добавление, изменение) */
   profile.editable = await person.checkPermission(user, {manager: true}); // todoo
   let {predki, potomki, siblings} = await person.fetchTree(profile._id);
@@ -44,10 +44,50 @@ async function getProfile(ctx) {
   const {person_key} = ctx.params;
   const {user} = ctx.state;
   const person = await Person.get(person_key);
-  const profile = await person.fetchProfile(person._id);
+  const profile = await person.fetchProfile();
   profile.editable = await person.checkPermission(user, {manager: true});
   // todo: profile.allowedActions = ['invite', ...] // permissions matrix
   ctx.body = {profile}
+}
+
+async function getCommonAncestorPath(ctx) {
+  const {person_key, ancestor_key} = ctx.params;
+  const {user} = ctx.state;
+  const person = await Person.get(person_key);
+  const ancestor_id = `Persons/${ancestor_key}`;
+  const branches = await person.getCommonAncestorPath(user._id, ancestor_id);
+  const path = {
+    nodes: [],
+    edges: []
+  };
+  for (let branch of branches) {
+    branch.vertices.map(item => {
+      path.nodes.push({
+        _key: item._key,
+        _id: item._id,
+        name: item.name,
+        surname: item.surname,
+        midname: item.midname,
+        maidenName: item.maidenName,
+        gender: item.gender,
+        born: item.born,
+        died: item.died,
+        addedBy: item.addedBy,
+        pic: item.pic,
+      })
+    });
+    branch.edges.map(item => {
+      path.edges.push({
+        _key: item._key,
+        _id: item._id,
+        _from: item._from,
+        _to: item._to,
+        addedBy: item.addedBy,
+        adopted: item.adopted,
+      })
+    });
+  }
+  ctx.body = {path}
 }
 
 async function createNewPerson(ctx) { //POST
@@ -163,6 +203,7 @@ router
   .post('/:person_key/add/:reltype', addPerson)    // обработка добавления персоны
   .post('/update/:person_key', updatePerson)    // обработка изменения персоны
   .get('/:person_key/tree', getTree)    // person page, profile page
+  .get('/:person_key/common_ancestor_path/:ancestor_key', getCommonAncestorPath)    // person page, profile page
   .delete('/:person_key', deletePerson);
 
 module.exports = router.routes();
