@@ -35,9 +35,9 @@ async function getTree(ctx) {
   const profile = await person.fetchProfile();
   profile.commonAncestorKey = await person.getCommonAncestorKey(user._id);
   /* проверка прав на изменение персоны (добавление, изменение) */
-  profile.editable = await person.checkPermission(user, {manager: true}); // todoo
-  let {predki, potomki, siblings} = await person.fetchTree(profile._id);
-  ctx.body = {profile, predki, potomki, siblings}; //gens, gensCount
+  profile.editable = await person.checkPermission(user, {manager: true});
+  let tree = await person.fetchTree(profile._id);
+  ctx.body = {profile, tree};
 }
 
 async function getProfile(ctx) {
