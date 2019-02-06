@@ -197,12 +197,12 @@ class Person {
     return await db.query(aql`
     RETURN LAST(
       INTERSECTION(
-        (FOR v, e, p IN 1..40 INBOUND ${user_id} 
+        (FOR v, e, p IN 0..40 INBOUND ${user_id} 
           GRAPH 'childGraph'
           OPTIONS {bfs: true}
           FILTER TO_BOOL(e.del) == false
           RETURN v._key),
-        (FOR v, e, p IN 1..40 INBOUND ${this._id}
+        (FOR v, e, p IN 0..40 INBOUND ${this._id}
           GRAPH 'childGraph'
           OPTIONS {bfs: true}
           FILTER TO_BOOL(e.del) == false
