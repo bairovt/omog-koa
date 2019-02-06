@@ -46,8 +46,7 @@ async function inviteUser(ctx) { // todo: process only for person.user === null
   // TODO: check permissions: only manager or higher and dedicated users (with canInvite: true)
   // TODO: tests
   if (
-    ctx.state.user.hasRole('manager') ||
-    ctx.state.user.canInvite
+    ctx.state.user.hasRoles(['manager', 'inviter'])
   ) {}
   else ctx.throw(403, 'Forbidden to invite user');
   // status: 0=invited (not confirmed), 1=active, 2=banned

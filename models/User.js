@@ -8,9 +8,8 @@ class User {
 		this._key = person._key;
 		this._id = person._id;
 		this.name = person.name;
-		this.roles = person.user.roles || [];
+		this.roles = person.user.roles || []; // 'admin', 'manager', 'inviter'
 		this.status = person.user.status;
-		this.canInvite = person.user.canInvite;
 		this.fullname = `${person.name} ${person.surname}`;
 	}
 
