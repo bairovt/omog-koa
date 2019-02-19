@@ -2,27 +2,29 @@
 const db = require('../lib/arangodb');
 const aql = require('arangojs').aql;
 const Joi = require('joi');
-const {nameSchema} = require('../lib/schemas');
+const {
+  nameSchema
+} = require('../lib/schemas');
 const CustomError = require('../lib/custom-error');
 
 class Person {
-	constructor(person){
-		this._key = person._key;
-		this._id = person._id;
-		this.name = person.name;
+  constructor(person) {
+    this._key = person._key;
+    this._id = person._id;
+    this.name = person.name;
     this.surname = person.surname;
-		this.midname = person.midname;
-		this.maidenName = person.maidenName;
-		this.info = person.info;
-		this.rod = person.rod;
-		this.gender = person.gender;
-		this.born = person.born;
-		this.died = person.died;
-		this.addedBy = person.addedBy;
-		this.pic = person.pic;
-	}
+    this.midname = person.midname;
+    this.maidenName = person.maidenName;
+    this.info = person.info;
+    this.rod = person.rod;
+    this.gender = person.gender;
+    this.born = person.born;
+    this.died = person.died;
+    this.addedBy = person.addedBy;
+    this.pic = person.pic;
+  }
 
-  static get schema () {
+  static get schema() {
     return Joi.object().keys({
       _key: Joi.string().trim().regex(/^[a-zA-Z0-9]+$/).min(3).max(30).allow(null),
       name: nameSchema.required(),
@@ -37,7 +39,7 @@ class Person {
     });
   }
 
-  static async create(personData, addedBy){
+  static async create(personData, addedBy) {
     // todo: доделать валидацию
     const validPerson = Joi.attempt(personData, Person.schema);
     validPerson.created = new Date(); // todo: rename to createdAt
@@ -49,9 +51,9 @@ class Person {
 
   static async get(handle) {
     const persons = db.collection('Persons');
-    const person =  await persons.document(handle);
+    const person = await persons.document(handle);
     if (!person) {
-      throw(new CustomError(404, ': person not found'));
+      throw (new CustomError(404, ': person not found'));
     }
     return new Person(person);
   }
@@ -75,7 +77,7 @@ class Person {
     // todo: продумать процедуру умирания пользователя
     // todo: запретить приглашение родственника с разницей в возрасте более 2-х поколений во избежание мертвых душ
     const depth = await db.query(
-      aql`FOR v, e, p
+        aql `FOR v, e, p
           IN 0..100 ANY ${this._id}
           GRAPH 'childGraph'
           OPTIONS {bfs: true, uniqueVertices: 'global'}
@@ -85,8 +87,11 @@ class Person {
         RETURN LENGTH(p.edges)`)
       .then(cursor => cursor.next());
 
+    if (!depth) {
+      return [];
+    }
     const closestRelativesUsers = await db.query(
-      aql`FOR v, e, p
+        aql `FOR v, e, p
           IN ${depth} ANY ${this._id}
           GRAPH "childGraph"
           OPTIONS {bfs: true, uniqueVertices: 'global'}
@@ -99,19 +104,19 @@ class Person {
   }
 
   // todo: cover by tests
-  async checkPermission(user, options={}) {
+  async checkPermission(user, options = {}) {
     if (options.manager) {
-      if ( user.hasRoles(['manager']) ) return true
+      if (user.hasRoles(['manager'])) return true
     }
     let closestUsers = await this.findClosestUsers(); // юзеры, которые могут изменять person
-    if (closestUsers.some(item => item._id === user._id)) return true;  // если user является ближайшим родственником-юзером
+    if (closestUsers.some(item => item._id === user._id)) return true; // если user является ближайшим родственником-юзером
     return false
   }
 
   async fetchProfile() {
     // todo: get addedBy by DOCUMENT command with only some fields
     // TODO: refactor shortest path (common ancs, relationship)
-    const profile = await db.query(aql`
+    const profile = await db.query(aql `
 	  FOR p IN Persons
 	      FILTER p._id == ${this._id}
 	      RETURN MERGE({ _key: p._key, _id: p._id,
@@ -126,18 +131,17 @@ class Person {
                         FILTER added._id == p.addedBy
                         RETURN {name: added.name, surname: added.surname, _key: added._key})
           }
-        )`
-    ).then(cursor => cursor.next());
+        )`).then(cursor => cursor.next());
 
     if (profile === undefined) {
-      throw(new CustomError(404, ': profile not found'));
+      throw (new CustomError(404, ': profile not found'));
     }
     return profile
   }
 
   async fetchTree() {
     return await db.query(
-      aql`RETURN {
+      aql `RETURN {
             predki:
               (FOR v, e, p IN 1..100 INBOUND ${this._id} GRAPH 'childGraph'
                 // OPTIONS {bfs: true}
@@ -171,7 +175,7 @@ class Person {
 
   async fetchPredkiPotomkiIdUnion() {
     return await db.query(
-      aql`RETURN UNION(
+      aql `RETURN UNION(
               (FOR v, e, p IN 1..100 INBOUND ${this._id} GRAPH 'childGraph'       //predki id
                 FILTER p.edges[*].del ALL == null
                 RETURN v._id),
@@ -183,18 +187,18 @@ class Person {
 
   async fetchNextOfKins() {
     return await db.query(
-      aql`FOR v, e, p IN 1..1 ANY ${this._id} GRAPH 'childGraph'
+        aql `FOR v, e, p IN 1..1 ANY ${this._id} GRAPH 'childGraph'
               FILTER e.del == null
               RETURN {_key: v._key, _id: v._id, addedBy: v.addedBy}`)
       .then(cursor => cursor.all());
   }
 
-  async getCommonAncestorKey(user_id){
+  async getCommonAncestorKey(user_id) {
     // FILTER TO_BOOL(e.adopted) == false
     if (user_id === this._id) {
       return null;
     }
-    return await db.query(aql`
+    return await db.query(aql `
     RETURN LAST(
       INTERSECTION(
         (FOR v, e, p IN 0..40 INBOUND ${user_id} 
@@ -211,26 +215,24 @@ class Person {
   }
 
   async getShortestPath(user_id) {
-    return await db.query(aql`
+    return await db.query(aql `
 	  FOR v, e IN ANY SHORTEST_PATH
       ${this._id} TO ${user_id}
       GRAPH 'childGraph'
       RETURN {
         person: {_key: v._key, _id: v._id, name: v.name, surname: v.surname, gender: v.gender, pic: v.pic},
         edge: e
-      }`
-    ).then(cursor => cursor.all());
+      }`).then(cursor => cursor.all());
   }
 
   async getCommonAncestorPath(user_id, ancestor_id) {
     // FILTER TO_BOOL(e.adopted) == false
-    return await db.query(aql`
+    return await db.query(aql `
 	  FOR v, e, p IN 0..40 OUTBOUND ${ancestor_id} 
       GRAPH 'childGraph'
       FILTER TO_BOOL(e.del) == false
       FILTER v._id IN [${user_id}, ${this._id}]
-      RETURN p`
-    ).then(cursor => cursor.all());
+      RETURN p`).then(cursor => cursor.all());
   }
 }
 
