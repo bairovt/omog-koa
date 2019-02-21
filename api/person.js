@@ -42,13 +42,28 @@ async function getTree(ctx) {
     user
   } = ctx.state;
   const person = await Person.get(person_key);
-  const profile = await person.fetchProfile();
-  profile.commonAncestorKey = await person.getCommonAncestorKey(user._id);
-  /* проверка прав на изменение персоны (добавление, изменение) */
-  profile.editable = await person.checkPermission(user, {
-    manager: true
-  });
-  let tree = await person.fetchTree(profile._id);
+
+  // const profile = await person.fetchProfile();
+  // profile.commonAncestorKey = await person.getCommonAncestorKey(user._id);
+  // /* проверка прав на изменение персоны (добавление, изменение) */
+  // profile.editable = await person.checkPermission(user, {
+  //   manager: true
+  // });
+  // let tree = await person.fetchTree();
+
+  /* do stuff in parallel */
+  const [profile, commonAncestorKey, editable, tree] = await Promise.all([
+    person.fetchProfile(),
+    person.getCommonAncestorKey(user._id),
+    /* проверка прав на изменение персоны (добавление, изменение) */
+    person.checkPermission(user, {
+      manager: true
+    }),
+    person.fetchTree()
+  ])
+  profile.commonAncestorKey = commonAncestorKey;
+  profile.editable = editable;
+
   ctx.body = {
     profile,
     tree
