@@ -70,6 +70,43 @@ async function getTree(ctx) {
   };
 }
 
+// rewrite
+async function getPotentialParentsAndChildren(ctx) {
+  let {
+    person_key
+  } = ctx.params;
+  const {
+    user
+  } = ctx.state;
+  const person = await Person.get(person_key);
+
+  // const profile = await person.fetchProfile();
+  // profile.commonAncestorKey = await person.getCommonAncestorKey(user._id);
+  // /* проверка прав на изменение персоны (добавление, изменение) */
+  // profile.editable = await person.checkPermission(user, {
+  //   manager: true
+  // });
+  // let tree = await person.fetchTree();
+
+  // do stuff in parallel
+  const [profile, commonAncestorKey, editable, tree] = await Promise.all([
+    person.fetchProfile(),
+    person.getCommonAncestorKey(user._id),
+    // проверка прав на изменение персоны (добавление, изменение)
+    person.checkPermission(user, {
+      manager: true
+    }),
+    person.fetchTree()
+  ])
+  profile.commonAncestorKey = commonAncestorKey;
+  profile.editable = editable;
+
+  ctx.body = {
+    profile,
+    tree
+  };
+}
+
 async function getProfile(ctx) {
   const {
     person_key
@@ -205,31 +242,46 @@ async function updatePerson(ctx) { //POST
   const person = await Person.get(person_key);
 
   // проверка санкций
-  if (await person.checkPermission(user, {
+  if (
+    !(await person.checkPermission(user, {
       manager: true
-    })) {
-    let result = Joi.validate(ctx.request.body.person, Person.schema, {
-      stripUnknown: true
-    });
-    if (result.error) {
-      console.log(result.error.details, result.value);
-      ctx.status = 400; // todo: доп. инфо ошибок валидации
-      ctx.body = {
-        errorMsg: result.error.message
-      }
-    } else {
-      let validPersonData = result.value;
-      validPersonData.updated = {
-        by: user._id,
-        time: new Date()
-      };
-      await db.collection('Persons').update(person._id, validPersonData, {
-        keepNull: false
-      });
-      ctx.body = {};
-    }
+    }))
+  ) {
+    return ctx.throw(403, "Нет санкций на изменение персоны");
+  }
+  let personData = ctx.request.body.person;
+  if (personData.rod instanceof Object) {
+    personData.rod = personData.rod._id;
+  }
+  // todo: fix empty rod
+  // todo: handle joi errors
+  // todo: email errors
+  // todo: fix profile page refresh - empty
+  // todo: when rod updated show new value instantly
+
+  let result = Joi.validate(personData, Person.schema, {
+    stripUnknown: true
+  });
+  if (result.error) {
+    return ctx.throw(result.error);
+    // if (result.error) {
+    //   // console.error(result.error.details, result.value);
+    //   console.error(result.error);
+    //   ctx.status = 400; // todo: доп. инфо ошибок валидации
+    //   ctx.body = {
+    //     errorMsg: result.error.message
+    //   }
   } else {
-    ctx.throw(403, "Нет санкций на изменение персоны")
+    let validPersonData = result.value;
+    // todo: refactor to updatedAt timestamp and log to history
+    validPersonData.updated = {
+      by: user._id,
+      time: new Date()
+    };
+    await db.collection('Persons').update(person._id, validPersonData, {
+      keepNull: false
+    });
+    ctx.body = {};
   }
 }
 
@@ -287,6 +339,7 @@ router
   .post('/update/:person_key', updatePerson) // обработка изменения персоны
   .get('/:person_key/tree', getTree) // person page, profile page
   .get('/:person_key/common_ancestor_path/:ancestor_key', getCommonAncestorPath) // person page, profile page
-  .delete('/:person_key', deletePerson);
+  .delete('/:person_key', deletePerson)
+  .get('/:person_key/potential_parents_and_children', getPotentialParentsAndChildren); // person page, profile page;
 
 module.exports = router.routes();
