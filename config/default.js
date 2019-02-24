@@ -14,11 +14,11 @@ module.exports = {
   corsOrigin: 'http://localhost:8080',
   db: {
     URL: 'http://127.0.0.1:8529',
-    name: 'rod_database_name',
-    user: 'rod_database_user',
-    password: 'rod_database_pass'
+    name: 'omog_database_name',
+    user: 'omog_database_user',
+    password: 'omog_database_pass'
   },
-  uploadDir: '/home/tumen/vuejs/omogme/dist/static/upload',
+  uploadDir: '/home/tumen/vuejs/omog-vue/public/upload',
   mailer: {
     user: 'mail@omog.info',
     pass: 'password'

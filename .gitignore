@@ -7,3 +7,4 @@ config/production.js
 config/development.js
 log/
 aql/
+test_data/
