@@ -3,33 +3,46 @@
   // Наведите указатель мыши, чтобы просмотреть описания существующих атрибутов.
   // Для получения дополнительной информации посетите: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
-  "configurations": [
-
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "nodemon_dev",
-      "runtimeExecutable": "nodemon",
-      "program": "${workspaceFolder}/rod-server.js",
-      "restart": true,
-      "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen",
-      "env": {
-        "NODE_ENV": "development",
-        //"NODE_PATH": "${workspaceFolder}"
-      }
-    }, {
-      "type": "node",
-      "request": "launch",
-      "name": "nodemon_test",
-      "runtimeExecutable": "nodemon",
-      "program": "${workspaceFolder}/rod-server.js",
-      "restart": true,
-      "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen",
-      "env": {
-        "NODE_ENV": "test",
-      }
+  "configurations": [{
+    "type": "node",
+    "request": "launch",
+    "name": "mon_dev",
+    "runtimeExecutable": "nodemon",
+    "program": "${workspaceFolder}/rod-server.js",
+    "args": ["--watch"],
+    "restart": true,
+    "console": "integratedTerminal",
+    "internalConsoleOptions": "neverOpen",
+    "env": {
+      "NODE_ENV": "development",
+      //"NODE_PATH": "${workspaceFolder}"
     }
-  ]
+  }, {
+    "type": "node",
+    "request": "launch",
+    "name": "pm2_dev",
+    "runtimeExecutable": "pm2-dev",
+    "program": "${workspaceFolder}/rod-server.js",
+    // "args": ["--watch"],
+    "restart": true,
+    "console": "integratedTerminal",
+    "internalConsoleOptions": "neverOpen",
+    "env": {
+      "NODE_ENV": "development",
+      //"NODE_PATH": "${workspaceFolder}"
+    }
+  }, {
+    "type": "node",
+    "request": "launch",
+    "name": "mon_test",
+    "runtimeExecutable": "nodemon",
+    "program": "${workspaceFolder}/rod-server.js",
+    "args": ["--watch"],
+    "restart": true,
+    "console": "integratedTerminal",
+    "internalConsoleOptions": "neverOpen",
+    "env": {
+      "NODE_ENV": "test",
+    }
+  }]
 }

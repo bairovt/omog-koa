@@ -15,54 +15,67 @@ module.exports = async function (ctx, next) {
   try {
     await next();
   } catch (error) {
+    // todo: email errors
+
     if (error.status) {
-      ctx.status = error.status;
-      return ctx.body = {errorMsg: error.message}
-    }
-    else if (error.name) {
+      await logError(error.status, ctx, error);
+      return ctx.body = {
+        errorMsg: error.message
+      }
+    } else if (error.name) {
       switch (error.name) {
         case 'JsonWebTokenError':
           await logError(401, ctx, error);
           ctx.status = 401;
-          return ctx.body = {errorMsg: 'invalid_token'}
+          return ctx.body = {
+            errorMsg: 'invalid_token'
+          }
         case 'ValidationError':
           await logError(400, ctx, error);
           ctx.status = 400;
-          // return ctx.body = {errorMsg: error.message}
-          return ctx.body = {errorMsg: error.details}
+          return ctx.body = {
+            errorMsg: error.message
+          }
+          // return ctx.body = {
+          //   errorMsg: error.details
+          // }
         case 'ArangoError':
           switch (error.code) {
             case 404: // ArangoError
               await logError(404, ctx, error);
               ctx.status = 404;
-              return ctx.body = {errorMsg: 'db: document not found'}
+              return ctx.body = {
+                errorMsg: 'db: document not found'
+              }
           }
       }
-    }
-    else if (error.code) {
-      // console.log('type: ' + typeof(error.code))
+    } else if (error.code) {
       switch (error.code) {
         case 'LIMIT_FILE_SIZE': // koa-multer
           await logError(400, ctx, error);
           ctx.status = 400;
-          return ctx.body = {errorMsg: 'file_size_exceeded'}
+          return ctx.body = {
+            errorMsg: 'file_size_exceeded'
+          }
       }
     }
     await logError(500, ctx, error);
     ctx.status = 500;
-    return ctx.body = {errorMsg: 'server_error'}
+    return ctx.body = {
+      errorMsg: 'server_error'
+    }
   }
 };
 
-async function logError(status, ctx, error){
-  const error_log = ctx.request.method + ' ' + ctx.request.href
-                    + '\n=====ctx.state\n' + JSON.stringify(ctx.state, null, 2)
-                    + '\n=====ctx.req.headers\n' + JSON.stringify(ctx.req.headers, null, 2)
-                    + '\n=====error.name\n' + error.name
-                    + '\n=====error.status\n' + error.status
-                    + '\n=====error.code\n' + error.code
-                    + '\n=====error.message\n' + error.message
-                    + '\n=====error.stack\n' + error.stack;
+async function logError(status, ctx, error) {
+  const error_log = ctx.request.method + ' ' + ctx.request.href +
+    '\n=====ctx.state\n' + JSON.stringify(ctx.state, null, 2) +
+    '\n=====ctx.req.headers\n' + JSON.stringify(ctx.req.headers, null, 2) +
+    '\n=====error.name\n' + error.name +
+    '\n=====error.status\n' + error.status +
+    '\n=====error.code\n' + error.code +
+    '\n=====error.message\n' + error.message +
+    '\n=====error.stack\n' + error.stack;
   await writeFile(path.join(root, 'log', Date.now() + '_' + status + '.error'), error_log);
   if (process.env.NODE_ENV == 'development') console.error(error_log);
 }
