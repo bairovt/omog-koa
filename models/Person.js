@@ -87,9 +87,9 @@ class Person {
         RETURN LENGTH(p.edges)`)
       .then(cursor => cursor.next());
 
-    if (!depth) {
-      return [];
-    }
+    // if (!depth) {
+    //   return [];
+    // }
     const closestRelativesUsers = await db.query(
         aql `FOR v, e, p
           IN ${depth} ANY ${this._id}
