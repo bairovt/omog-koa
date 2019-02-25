@@ -19,6 +19,7 @@ module.exports = async function (ctx, next) {
 
     if (error.status) {
       await logError(error.status, ctx, error);
+      ctx.status = error.status;
       return ctx.body = {
         errorMsg: error.message
       }
