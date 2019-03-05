@@ -249,40 +249,28 @@ async function updatePerson(ctx) { //POST
   ) {
     return ctx.throw(403, "Нет санкций на изменение персоны");
   }
+
   let personData = ctx.request.body.person;
-  if (personData.rod instanceof Object) {
-    personData.rod = personData.rod._id;
-  }
-  // todo: fix empty rod
-  // todo: handle joi errors
-  // todo: email errors
-  // todo: fix profile page refresh - empty
-  // todo: when rod updated show new value instantly
 
   let result = Joi.validate(personData, Person.schema, {
     stripUnknown: true
   });
   if (result.error) {
-    return ctx.throw(result.error);
-    // if (result.error) {
-    //   // console.error(result.error.details, result.value);
-    //   console.error(result.error);
-    //   ctx.status = 400; // todo: доп. инфо ошибок валидации
-    //   ctx.body = {
-    //     errorMsg: result.error.message
-    //   }
-  } else {
-    let validPersonData = result.value;
-    // todo: refactor to updatedAt timestamp and log to history
-    validPersonData.updated = {
-      by: user._id,
-      time: new Date()
-    };
-    await db.collection('Persons').update(person._id, validPersonData, {
-      keepNull: false
-    });
-    ctx.body = {};
+    throw result.error;
   }
+
+  let validPersonData = result.value;
+  // todo: refactor to updatedAt timestamp and log to history
+  validPersonData.updated = {
+    by: user._id,
+    time: new Date()
+  };
+  await db.collection('Persons').update(person._id, validPersonData, {
+    keepNull: false
+  });
+  ctx.body = {
+    success: true
+  };
 }
 
 async function deletePerson(ctx) { // key
