@@ -234,6 +234,43 @@ class Person {
       FILTER v._id IN [${user_id}, ${this._id}]
       RETURN p`).then(cursor => cursor.all());
   }
+
+  async getPotentialParentsAndChildren() {
+    // FILTER TO_BOOL(e.adopted) == false
+    return await db.query(aql `
+      RETURN {
+        children: (FOR v, e, p
+            IN 3 ANY ${this._id}
+            GRAPH 'childGraph'
+            OPTIONS {bfs: true, uniqueVertices: 'global'}
+            FILTER p.edges[0]._from == ${this._id}
+            FILTER p.edges[1]._to == p.vertices[1]._id
+            FILTER p.edges[-1]._to == p.vertices[-1]._id
+            FILTER p.edges[*].del ALL == null
+          RETURN {
+            _key: v._key,
+            name: v.name,
+            surname: v.surname,
+            midname: v.midname
+          }        
+        ),
+        parents: (FOR v, e, p
+            IN 3 ANY ${this._id}
+            GRAPH 'childGraph'
+            OPTIONS {bfs: true, uniqueVertices: 'global'}
+            FILTER p.edges[0]._to == ${this._id}
+            FILTER p.edges[1]._from == p.vertices[1]._id
+            FILTER p.edges[-1]._from == p.vertices[-1]._id
+            FILTER p.edges[*].del ALL == null
+          RETURN {
+            _key: v._key,
+            name: v.name,
+            surname: v.surname,
+            midname: v.midname
+          }
+        )
+    }`).then(cursor => cursor.next());
+  }
 }
 
 module.exports = Person;

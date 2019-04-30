@@ -71,7 +71,7 @@ async function getTree(ctx) {
 }
 
 // rewrite
-async function getPotentialParentsAndChildren(ctx) {
+async function potentialParentsAndChildren(ctx) {
   let {
     person_key
   } = ctx.params;
@@ -80,30 +80,18 @@ async function getPotentialParentsAndChildren(ctx) {
   } = ctx.state;
   const person = await Person.get(person_key);
 
-  // const profile = await person.fetchProfile();
-  // profile.commonAncestorKey = await person.getCommonAncestorKey(user._id);
-  // /* проверка прав на изменение персоны (добавление, изменение) */
-  // profile.editable = await person.checkPermission(user, {
-  //   manager: true
-  // });
-  // let tree = await person.fetchTree();
+  const editable = await person.checkPermission(user, {
+    manager: true
+  });
 
-  // do stuff in parallel
-  const [profile, commonAncestorKey, editable, tree] = await Promise.all([
-    person.fetchProfile(),
-    person.getCommonAncestorKey(user._id),
-    // проверка прав на изменение персоны (добавление, изменение)
-    person.checkPermission(user, {
-      manager: true
-    }),
-    person.fetchTree()
-  ])
-  profile.commonAncestorKey = commonAncestorKey;
-  profile.editable = editable;
+  if (!editable) {
+    ctx.throw(403, 'have_no_access_to_relate');
+  }
+
+  const potential = await person.getPotentialParentsAndChildren();
 
   ctx.body = {
-    profile,
-    tree
+    potential
   };
 }
 
@@ -125,7 +113,7 @@ async function getProfile(ctx) {
   }
 }
 
-async function getCommonAncestorPath(ctx) {
+async function commonAncestorPath(ctx) {
   const {
     person_key,
     ancestor_key
@@ -208,9 +196,10 @@ async function addPerson(ctx) { //POST
       #1: может добавить ближайший родственник-юзер персоны (самый близкий - сам person)
       #2: ??? тот кто добавил персону (addedBy): person.addedBy === user._id
       #3: manager */
-  if (!(await person.checkPermission(user, {
-      manager: true
-    }))) {
+  const editable = await person.checkPermission(user, {
+    manager: true
+  });
+  if (!editable) {
     ctx.throw(403, "Нет санкций на добавление персоны");
   }
   const newPerson = await Person.create(personData, ctx.state.user._id);
@@ -326,8 +315,8 @@ router
   .post('/:person_key/add/:reltype', addPerson) // обработка добавления персоны
   .post('/update/:person_key', updatePerson) // обработка изменения персоны
   .get('/:person_key/tree', getTree) // person page, profile page
-  .get('/:person_key/common_ancestor_path/:ancestor_key', getCommonAncestorPath) // person page, profile page
+  .get('/:person_key/common_ancestor_path/:ancestor_key', commonAncestorPath) // person page, profile page
   .delete('/:person_key', deletePerson)
-  .get('/:person_key/potential_parents_and_children', getPotentialParentsAndChildren); // person page, profile page;
+  .get('/:person_key/potential_parents_and_children', potentialParentsAndChildren); // person page, profile page;
 
 module.exports = router.routes();

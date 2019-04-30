@@ -7,36 +7,35 @@ const Person = require('../models/Person');
 
 const router = new Router();
 
-async function setRelation(ctx){ // POST
+async function setRelation(ctx) { // POST
   //todo: запрос на соединение с чужой персоной
   //todo: запрет указания отца/матери, если отец/мать уже есть
   const user = ctx.state.user;
   // only manager can set relation
   // if (!user.hasRoles('manager')) ctx.throw(403, 'only manager can set relation');
-  let {start_key, end_key, reltype, adopted} = ctx.request.body;
+  let {
+    from_key,
+    to_key,
+    adopted
+  } = ctx.request.body;
 
-  start_key = start_key.trim();
-  end_key = end_key.trim();
+  from_key = from_key.trim();
+  to_key = to_key.trim();
 
   // проверка № 1
-  if (start_key === end_key) ctx.throw(400, 'Нельзя человека указать ребенком самого себя');
-
-  let fromKey = start_key, toKey = end_key; // if reltype: 'parent'
-  if (reltype === 'child') { // if reltype is 'child': reverse direction
-    fromKey = end_key;
-    toKey = start_key;
-  }
+  if (from_key === to_key) ctx.throw(400, 'Нельзя человека указать ребенком самого себя');
 
   // ключи должны быть реальными, иначе 404
-  const fromPerson = await Person.get(fromKey);
-  const toPerson = await Person.get(toKey);
+  const fromPerson = await Person.get(from_key);
+  const toPerson = await Person.get(to_key);
 
   // соединение только своих персон (кроме модератора)
-  if (fromPerson.addedBy === user._id && toPerson.addedBy === user._id || // both persons added by user
-      fromPerson.addedBy === user._id && toPerson._id === user._id || // one person added by user, other is user
-      fromPerson._id === user._id && toPerson.addedBy === user._id || // one person added by user, other is user
-      user.hasRoles('manager')) {}
-  else ctx.throw(403, 'Forbidden to link persons added by different users');
+  if (user.hasRoles('manager') ||
+    fromPerson.addedBy === user._id && toPerson.addedBy === user._id || // both persons added by user
+    fromPerson.addedBy === user._id && toPerson._id === user._id || // one person added by user, other is user
+    fromPerson._id === user._id && toPerson.addedBy === user._id || // one person added by user, other is user
+    await fromPerson.checkPermission(user) && await toPerson.checkPermission(user) // both persons editable by user
+  ) {} else ctx.throw(403, 'User is not allowed to link these persons');
 
   /* todo: заменить проверки №2 и №3 на полный траверс (!adopted) родственников - нельзя в качестве родного родителя или
       ребенка указать кровного родственника (adopted - можно) */
@@ -52,16 +51,25 @@ async function setRelation(ctx){ // POST
   // проверка № 4: // случай когда связь существует, но была удалена (свойство del) (ArangoError: unique constraint violated - in index 13524179 of type hash over ["_from","_to"]...)
   const childCollection = db.collection('child');
   const existenEdge = await childCollection.byExample({
-                              _from: 'Persons/' + fromKey,
-                              _to: 'Persons/' + toKey
-                            }).then((cursor)=>{return cursor.next()});
+    _from: 'Persons/' + from_key,
+    _to: 'Persons/' + to_key
+  }).then((cursor) => {
+    return cursor.next()
+  });
   if (existenEdge) {
     let history = existenEdge.history || [];
-    history.push({del: existenEdge.del});    // запись истории
-    history.push({set: {by: user._id, time: new Date()}});
+    history.push({
+      del: existenEdge.del
+    }); // запись истории
+    history.push({
+      set: {
+        by: user._id,
+        time: new Date()
+      }
+    });
     await childCollection.update(existenEdge._id, {
       del: null,
-      history                               // todo: не учитывется adopted
+      history // todo: не учитывется adopted
     });
     return ctx.body = {}
   }
@@ -74,8 +82,10 @@ async function setRelation(ctx){ // POST
   return ctx.body = {}
 }
 
-async function deleteChildEdge (ctx) {
-  const {_key} = ctx.params;
+async function deleteChildEdge(ctx) {
+  const {
+    _key
+  } = ctx.params;
   const user = ctx.state.user;
 
   const childCollection = db.collection('child');
@@ -86,7 +96,7 @@ async function deleteChildEdge (ctx) {
 
   const now = new Date();
   const parent_id = await db.query(
-    aql`FOR e IN child
+    aql `FOR e IN child
           FILTER e._key == ${_key}
           UPDATE ${_key} WITH {
             del: {
@@ -97,7 +107,9 @@ async function deleteChildEdge (ctx) {
           RETURN e._from
     `).then(cursor => cursor.next());
 
-  ctx.body = {parent_key: parent_id.split('/')[1]}
+  ctx.body = {
+    parent_key: parent_id.split('/')[1]
+  }
 }
 
 router
