@@ -43,14 +43,6 @@ async function getTree(ctx) {
   } = ctx.state;
   const person = await Person.get(person_key);
 
-  // const profile = await person.fetchProfile();
-  // profile.commonAncestorKey = await person.getCommonAncestorKey(user._id);
-  // /* проверка прав на изменение персоны (добавление, изменение) */
-  // profile.editable = await person.checkPermission(user, {
-  //   manager: true
-  // });
-  // let tree = await person.fetchTree();
-
   /* do stuff in parallel */
   const [profile, commonAncestorKey, editable, tree] = await Promise.all([
     person.fetchProfile(),
@@ -285,6 +277,7 @@ async function deletePerson(ctx) { // key
   отображать кнопку Удалить, только если есть санкции удаления
   */
 
+  // ближайшие родственники
   const nextOfKins = await person.fetchNextOfKins();
   if (nextOfKins.length > 1) {
     ctx.throw(400, 'Запрещено удалять персону с более чем 1 связью');

@@ -82,7 +82,6 @@ class Person {
           GRAPH 'childGraph'
           OPTIONS {bfs: true, uniqueVertices: 'global'}
           FILTER v.user.status == 1
-          FILTER p.edges[*].del ALL == null
           LIMIT 1
         RETURN LENGTH(p.edges)`)
       .then(cursor => cursor.next());
@@ -96,7 +95,6 @@ class Person {
           GRAPH "childGraph"
           OPTIONS {bfs: true, uniqueVertices: 'global'}
           FILTER v.user.status == 1
-          FILTER p.edges[*].del ALL == null
         RETURN {_id: v._id, name: v.name, surname: v.surname}`) // depth: LENGTH(p.edges)
       .then(cursor => cursor.all());
 
@@ -145,7 +143,6 @@ class Person {
             predki:
               (FOR v, e, p IN 1..100 INBOUND ${this._id} GRAPH 'childGraph'
                 // OPTIONS {bfs: true}
-                FILTER p.edges[*].del ALL == null            // не учитывать удаленные связи
                 RETURN {
                   person: {_key: v._key, _id: v._id, name: v.name, surname: v.surname, gender: v.gender, pic: v.pic},
                   edge: e,
@@ -155,7 +152,6 @@ class Person {
             potomki:
               (FOR v, e, p IN 1..100 OUTBOUND ${this._id} GRAPH 'childGraph'
                 OPTIONS {bfs: true, uniqueVertices: "global"} // uniqueVertices: "global" - остутствует один edge на каждый дубль
-                FILTER p.edges[*].del ALL == null
                 RETURN {
                   person: {_key: v._key, _id: v._id, name: v.name, surname: v.surname, gender: v.gender, pic: v.pic},
                   edge: e,
@@ -164,7 +160,7 @@ class Person {
             siblings: 
               (FOR v,e,p IN 2 ANY ${this._id} GRAPH 'childGraph'
                 //OPTIONS {bfs: true, uniqueVertices: "global"}
-                FILTER p.edges[0]._from == p.edges[1]._from AND p.edges[*].del ALL == null
+                FILTER p.edges[0]._from == p.edges[1]._from
                 RETURN {
                   person: {_key: v._key, _id: v._id, name: v.name, surname: v.surname, gender: v.gender, pic: v.pic},
                   edge: e
@@ -177,10 +173,8 @@ class Person {
     return await db.query(
       aql `RETURN UNION(
               (FOR v, e, p IN 1..100 INBOUND ${this._id} GRAPH 'childGraph'       //predki id
-                FILTER p.edges[*].del ALL == null
                 RETURN v._id),
               (FOR v, e, p IN 1..100 OUTBOUND ${this._id} GRAPH 'childGraph'      //potomki id
-                FILTER p.edges[*].del ALL == null
                 RETURN v._id)
            )`).then(cursor => cursor.next());
   }
@@ -188,7 +182,6 @@ class Person {
   async fetchNextOfKins() {
     return await db.query(
         aql `FOR v, e, p IN 1..1 ANY ${this._id} GRAPH 'childGraph'
-              FILTER e.del == null
               RETURN {_key: v._key, _id: v._id, addedBy: v.addedBy}`)
       .then(cursor => cursor.all());
   }
@@ -204,12 +197,10 @@ class Person {
         (FOR v, e, p IN 0..40 INBOUND ${user_id} 
           GRAPH 'childGraph'
           OPTIONS {bfs: true}
-          FILTER TO_BOOL(e.del) == false
           RETURN v._key),
         (FOR v, e, p IN 0..40 INBOUND ${this._id}
           GRAPH 'childGraph'
           OPTIONS {bfs: true}
-          FILTER TO_BOOL(e.del) == false
           RETURN v._key)
     ))`).then(cursor => cursor.next());
   }
@@ -230,7 +221,6 @@ class Person {
     return await db.query(aql `
 	  FOR v, e, p IN 0..40 OUTBOUND ${ancestor_id} 
       GRAPH 'childGraph'
-      FILTER TO_BOOL(e.del) == false
       FILTER v._id IN [${user_id}, ${this._id}]
       RETURN p`).then(cursor => cursor.all());
   }
@@ -246,7 +236,6 @@ class Person {
             FILTER p.edges[0]._from == ${this._id}
             FILTER p.edges[1]._to == p.vertices[1]._id
             FILTER p.edges[-1]._to == p.vertices[-1]._id
-            FILTER p.edges[*].del ALL == null
           RETURN {
             _key: v._key,
             name: v.name,
@@ -261,7 +250,6 @@ class Person {
             FILTER p.edges[0]._to == ${this._id}
             FILTER p.edges[1]._from == p.vertices[1]._id
             FILTER p.edges[-1]._from == p.vertices[-1]._id
-            FILTER p.edges[*].del ALL == null
           RETURN {
             _key: v._key,
             name: v.name,

@@ -4,7 +4,6 @@ const aql = require('arangojs').aql;
 const Router = require('koa-router');
 const Person = require('../models/Person');
 
-
 const router = new Router();
 
 async function setRelation(ctx) { // POST
@@ -47,33 +46,6 @@ async function setRelation(ctx) { // POST
   // let commonPredki = await findCommonPredki(fromPerson._id, toPerson._id);
   // if (commonPredki.length) ctx.throw(400, 'Нельзя в качестве ребенка указать человека с общим предком');
 
-  // todo: Переделать удаление связи child на реальное удаление с сохранение записи в истоию куда-нибудь
-  // проверка № 4: // случай когда связь существует, но была удалена (свойство del) (ArangoError: unique constraint violated - in index 13524179 of type hash over ["_from","_to"]...)
-  const childCollection = db.collection('child');
-  const existenEdge = await childCollection.byExample({
-    _from: 'Persons/' + from_key,
-    _to: 'Persons/' + to_key
-  }).then((cursor) => {
-    return cursor.next()
-  });
-  if (existenEdge) {
-    let history = existenEdge.history || [];
-    history.push({
-      del: existenEdge.del
-    }); // запись истории
-    history.push({
-      set: {
-        by: user._id,
-        time: new Date()
-      }
-    });
-    await childCollection.update(existenEdge._id, {
-      del: null,
-      history // todo: не учитывется adopted
-    });
-    return ctx.body = {}
-  }
-
   const edgeData = {
     addedBy: user._id
   };
@@ -94,21 +66,21 @@ async function deleteChildEdge(ctx) {
   if (edge.addedBy === user._id || user.hasRoles(['manager'])) {} // continue
   else ctx.throw(403, 'нет санкций на удаление связи');
 
-  const now = new Date();
-  const parent_id = await db.query(
-    aql `FOR e IN child
-          FILTER e._key == ${_key}
-          UPDATE ${_key} WITH {
-            del: {
-              by: ${user._id},
-              time: ${now}
-            }
-          } IN child
-          RETURN e._from
-    `).then(cursor => cursor.next());
+  const time = new Date();
+
+  const logs = db.collection('Logs');
+  await logs.save({
+    time,
+    action: 'delete_child_edge',
+    person: user._id,
+    collection: 'child',
+    document: edge,
+  })
+
+  await childCollection.remove(edge._id);
 
   ctx.body = {
-    parent_key: parent_id.split('/')[1]
+    parent_key: edge._from.split('/')[1]
   }
 }
 
