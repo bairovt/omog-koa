@@ -86,9 +86,10 @@ class Person {
         RETURN LENGTH(p.edges)`)
       .then(cursor => cursor.next());
 
-    // if (!depth) {
-    //   return [];
-    // }
+    if (!depth) {
+      return [];
+    }
+
     const closestRelativesUsers = await db.query(
         aql `FOR v, e, p
           IN ${depth} ANY ${this._id}
@@ -106,6 +107,7 @@ class Person {
     if (options.manager) {
       if (user.hasRoles(['manager'])) return true
     }
+    if (this.addedBy === user._id) return true;
     let closestUsers = await this.findClosestUsers(); // юзеры, которые могут изменять person
     if (closestUsers.some(item => item._id === user._id)) return true; // если user является ближайшим родственником-юзером
     return false
@@ -138,7 +140,7 @@ class Person {
   }
 
   async fetchTree() {
-    return await db.query(
+    const tree = await db.query(
       aql `RETURN {
             predki:
               (FOR v, e, p IN 1..100 INBOUND ${this._id} GRAPH 'childGraph'
@@ -167,6 +169,7 @@ class Person {
                   //pathLength: LENGTH(p.edges)
                 })
           }`).then(cursor => cursor.next());
+    return tree;
   }
 
   async fetchPredkiPotomkiIdUnion() {
@@ -191,7 +194,7 @@ class Person {
     if (user_id === this._id) {
       return null;
     }
-    return await db.query(aql `
+    const commonAncestorKey = await db.query(aql `
     RETURN LAST(
       INTERSECTION(
         (FOR v, e, p IN 0..40 INBOUND ${user_id} 
@@ -203,6 +206,7 @@ class Person {
           OPTIONS {bfs: true}
           RETURN v._key)
     ))`).then(cursor => cursor.next());
+    return commonAncestorKey;
   }
 
   async getShortestPath(user_id) {
