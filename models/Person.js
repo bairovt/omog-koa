@@ -167,6 +167,13 @@ class Person {
                   person: {_key: v._key, _id: v._id, name: v.name, surname: v.surname, gender: v.gender, pic: v.pic},
                   edge: e
                   //pathLength: LENGTH(p.edges)
+                }),
+            partners: 
+              (FOR v,e,p IN 2 ANY ${this._id} GRAPH 'childGraph'
+                FILTER p.edges[0]._to == p.edges[1]._to
+                RETURN {
+                  person: {_key: v._key, _id: v._id, name: v.name, surname: v.surname, gender: v.gender, pic: v.pic},
+                  edge: e
                 })
           }`).then(cursor => cursor.next());
     return tree;
