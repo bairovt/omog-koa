@@ -107,6 +107,7 @@ class Person {
     if (options.manager) {
       if (user.hasRoles(['manager'])) return true
     }
+    if (this._id === user._id) return true;
     if (this.addedBy === user._id) return true;
     let closestUsers = await this.findClosestUsers(); // юзеры, которые могут изменять person
     if (closestUsers.some(item => item._id === user._id)) return true; // если user является ближайшим родственником-юзером
