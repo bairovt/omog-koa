@@ -65,5 +65,5 @@ if (module.parent) {
   let port = config.server.port;
   // app.listen(port);
   server.listen(port);
-  console.log(`\tMyRod.info listening on port ${port}`)
+  console.log(`\tomog.me listening on port ${port}`)
 }

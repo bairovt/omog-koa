@@ -42,29 +42,20 @@ async function signIn(ctx){
   }
 }
 
-async function inviteUser(ctx) { // todo: process only for person.user === null
+async function inviteUser(ctx) {
+  // todo: process only for person.user === null
   // TODO: check permissions: only manager or higher and dedicated users (with canInvite: true)
   // TODO: tests
-  if (
-    ctx.state.user.hasRoles(['manager', 'inviter'])
-  ) {}
-  else ctx.throw(403, 'Forbidden to invite user');
+  if (ctx.state.user.hasRoles(["manager", "inviter"])) {
+  } else ctx.throw(403, "Forbidden to invite user");
   // status: 0=invited (not confirmed), 1=active, 2=banned
-  const {person_key} = ctx.params;
-  let {email} = ctx.request.body;
+  const { person_key } = ctx.params;
+  let { email } = ctx.request.body;
   const person = await Person.get(person_key);
-  if (person.user) ctx.throw(400, 'person is user already');
+  if (person.user) ctx.throw(400, "person is user already");
   // todo: restrict users that can be added?: например - не дальше двоюродных
   email = Joi.attempt(email, emailSchema);
   const password = Math.random().toString(36).slice(-8); // generate password
-  const userData = {
-    email,
-    password,
-    status: 1, // todo: change to 3 (error when login: findClosestUsers -> FILTER v.user.status == 1)
-    invitedAt: new Date(),
-    invitedBy: ctx.state.user._id
-  };
-  await User.create(person._id, userData);
   const mailOptions = {
     from: '"omog.me" <mail@omog.me>',
     to: email,
@@ -72,11 +63,19 @@ async function inviteUser(ctx) { // todo: process only for person.user === null
     html: `<p>${ctx.state.user.fullname} приглашает Вас, ${person.name}, присоединиться к родовой социальной сети
       <b><a target="_blank" href="https://omog.me">omog.me</a></b></p>
       <p>Ваш пароль для входа: <b>${password}</b></p>
-    `
-  };
-  // todo: delete created user if sendMail error
+    `,
+  }; 
+
   await sendMail(mailOptions); // todo: rollback transaction if send error ??
-  return ctx.body = {message: 'create user'};
+  const userData = {
+    email,
+    password,
+    status: 1, // todo: change to 3 (error when login: findClosestUsers -> FILTER v.user.status == 1)
+    invitedAt: new Date(),
+    invitedBy: ctx.state.user._id,
+  };
+  await User.create(person._id, userData);
+  return (ctx.body = { message: "user created" });
 }
 
 router
