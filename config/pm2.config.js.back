@@ -1,13 +1,13 @@
 module.exports = {
   apps : [{
-    name      : 'rod',
+    name      : 'omog',
     script    : './rod-server.js',
-    watch: true,
+    watch: false,
     instance_var: 'INSTANCE_ID',
     env: {
 	NODE_ENV: 'production',
-	NODE_CONFIG_DIR: '/home/tumen/nodejs/rod.so/config/',
-	NODE_PATH: '/home/tumen/nodejs/rod.so'
+	NODE_CONFIG_DIR: '/.../projectdir/omog-koa/config/',
+	NODE_PATH: '/.../projectdir/omog-koa'
     },
 //    env_production : {
 //      NODE_ENV: 'production'
