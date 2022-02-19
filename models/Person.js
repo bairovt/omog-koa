@@ -41,17 +41,17 @@ class Person {
       rod: Joi.string().max(100).allow(null), // allow('') is same: empty('').default('')
       gender: Joi.number().integer().min(0).max(1).required(),
       born: Joi.number()
+        .empty("")
+        .default(null)
         .integer()
         .min(0)
-        .custom(yearNotFuture)
-        .empty("")
-        .allow(null),
+        .custom(yearNotFuture),
       died: Joi.number()
+        .empty("")
+        .default(null)
         .integer()
         .min(0)
-        .custom(yearNotFuture)
-        .empty("")
-        .allow(null),
+        .custom(yearNotFuture),
     });
   }
 
