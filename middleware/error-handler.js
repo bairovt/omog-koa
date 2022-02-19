@@ -72,6 +72,7 @@ async function logError(status, ctx, error) {
   const error_log = ctx.request.method + ' ' + ctx.request.href +
     '\n=====ctx.state\n' + JSON.stringify(ctx.state, null, 2) +
     '\n=====ctx.req.headers\n' + JSON.stringify(ctx.req.headers, null, 2) +
+    '\n=====ctx.request.body\n' + JSON.stringify(ctx.request.body, null, 2) +
     '\n=====error.name\n' + error.name +
     '\n=====error.status\n' + error.status +
     '\n=====error.code\n' + error.code +
