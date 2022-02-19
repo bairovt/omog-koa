@@ -233,7 +233,7 @@ async function updatePerson(ctx) { //POST
 
   let personData = ctx.request.body.person;
 
-  let result = Joi.validate(personData, Person.schema, {
+  let result = Person.schema.validate(personData, {
     stripUnknown: true
   });
   if (result.error) {

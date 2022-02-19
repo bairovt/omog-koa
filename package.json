@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon rod-server.js",
-    "dev": "NODE_ENV=development nodemon ./rod-server.js"
+    "nodemon": "NODE_ENV=development nodemon ./rod-server.js"
   },
   "author": "Bairov Tumen Gonchikbalovich",
   "license": "ISC",
@@ -15,7 +15,7 @@
     "co": "^4.6.0",
     "config": "^1.24.0",
     "gm": "^1.23.1",
-    "joi": "^10.4.1",
+    "joi": "^17.6.0",
     "jsonwebtoken": "^8.3.0",
     "kcors": "^2.2.1",
     "koa": "^2.3.0",
