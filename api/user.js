@@ -60,7 +60,7 @@ async function inviteUser(ctx) {
     from: '"omog.me" <mail@omog.me>',
     to: email,
     subject: `Приглашение на omog.me`,
-    html: `<p>${ctx.state.user.fullname} приглашает Вас, ${person.name}, присоединиться к родовой социальной сети
+    html: `<p>${ctx.state.user.fullname} приглашает Вас, ${person.name}, присоединиться к родовой сети
       <b><a target="_blank" href="https://omog.me">omog.me</a></b></p>
       <p>Ваш пароль для входа: <b>${password}</b></p>
     `,
