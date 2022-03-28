@@ -42,12 +42,14 @@ class Person {
       gender: Joi.number().integer().min(0).max(1).required(),
       born: Joi.number()
         .empty("")
+        .allow(null)
         .default(null)
         .integer()
         .min(0)
         .custom(yearNotFuture),
       died: Joi.number()
         .empty("")
+        .allow(null)
         .default(null)
         .integer()
         .min(0)
