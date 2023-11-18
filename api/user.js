@@ -11,6 +11,7 @@ const authorize = require('../middleware/authorize');
 const User = require('../models/User');
 const Person = require('../models/Person');
 const {emailSchema} = require('../lib/schemas');
+const config = require('config');
 
 async function signIn(ctx){
   let {email, password} = ctx.request.body;
@@ -57,14 +58,16 @@ async function inviteUser(ctx) {
   email = Joi.attempt(email, emailSchema);
   const password = Math.random().toString(36).slice(-8); // generate password
   const mailOptions = {
-    from: '"omog.me" <mail@omog.me>',
+    // from: '"omog.me" <info@omog.me>',
+    from: '<' + config.get("mailer.user") + '>',
     to: email,
+    cc: config.get("mailer.user"),
     subject: `Приглашение на omog.me`,
     html: `<p>${ctx.state.user.fullname} приглашает Вас, ${person.name}, присоединиться к родовой сети
       <b><a target="_blank" href="https://omog.me">omog.me</a></b></p>
       <p>Ваш пароль для входа: <b>${password}</b></p>
     `,
-  }; 
+  };
 
   await sendMail(mailOptions); // todo: rollback transaction if send error ??
   const userData = {
