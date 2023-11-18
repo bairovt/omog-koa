@@ -56,7 +56,7 @@ async function inviteUser(ctx) {
   if (person.user) ctx.throw(400, "person is user already");
   // todo: restrict users that can be added?: например - не дальше двоюродных
   email = Joi.attempt(email, emailSchema);
-  const password = Math.random().toString(36).slice(-8); // generate password
+  const password = Math.random().toString(36).slice(-10); // generate password
   const mailOptions = {
     // from: '"omog.me" <info@omog.me>',
     from: '<' + config.get("mailer.user") + '>',
